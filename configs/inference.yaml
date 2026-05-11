@@ -1,0 +1,8 @@
+prompt: "Explain symptoms of a failing alternator."
+max_new_tokens: 120
+temperature: 0.7
+top_p: 0.9
+repetition_penalty: 1.1
+do_sample: true
+return_full_text: false
+eos_token: "<|im_end|>"
