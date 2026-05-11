@@ -1,0 +1,26 @@
+data:
+  file: "Dataset/automotive_en_dataset.jsonl"
+  sample_size: 4000
+  shuffle_seed: 42
+  system_prompt: "You are an automotive expert assistant."
+
+training:
+  output_dir: "./qwen3b-automotive"
+  num_train_epochs: 1
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 2
+  learning_rate: 5e-5
+  logging_steps: 10
+  save_strategy: "no"
+  bf16: true
+  optim: "paged_adamw_8bit"
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  max_seq_length: 512
+  packing: false
+  report_to: "none"
+
+push:
+  lora_dir: "./qwen3b-automotive-lora"
+  lora_hub_repo: "Nasim435/qwen3b-automotive-lora"
+  merged_hub_repo: "Nasim435/Qwen-3B-Automotive-4000"
