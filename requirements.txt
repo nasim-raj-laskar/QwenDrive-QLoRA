@@ -10,5 +10,4 @@ einops
 scipy
 safetensors
 bitsandbytes
-huggingface_hub
 pyyaml

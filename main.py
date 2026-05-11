@@ -1,9 +1,8 @@
 import yaml
-from huggingface_hub import login
 
 from src.data import load_and_prepare
 from src.model import load_tokenizer, load_model
-from src.trainer import build_trainer, train_and_push
+from src.trainer import build_trainer, train_and_save
 from src.inference import run_inference
 
 
@@ -17,14 +16,12 @@ def main():
     lora_cfg = load_config("configs/lora.yaml")
     train_cfg = load_config("configs/training.yaml")
 
-    login()
-
     tokenizer = load_tokenizer(model_cfg["model_name"], model_cfg["trust_remote_code"])
     dataset = load_and_prepare(train_cfg["data"], tokenizer)
     model = load_model(model_cfg, lora_cfg)
 
     trainer = build_trainer(model, dataset, train_cfg["training"])
-    train_and_push(trainer, tokenizer, train_cfg["push"])
+    train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"])
 
     print(run_inference(model, tokenizer, "Explain symptoms of a failing alternator."))
 

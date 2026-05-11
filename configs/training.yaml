@@ -20,7 +20,3 @@ training:
   packing: false
   report_to: "none"
 
-push:
-  lora_dir: "./qwen3b-automotive-lora"
-  lora_hub_repo: "Nasim435/qwen3b-automotive-lora"
-  merged_hub_repo: "Nasim435/Qwen-3B-Automotive-4000"
