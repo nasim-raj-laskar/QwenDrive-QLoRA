@@ -32,7 +32,7 @@ class ModelEvaluator:
         
     def evaluate_model(self, eval_samples: int = 100) -> Dict[str, float]:
         """Run comprehensive evaluation."""
-        print(f"🔍 Starting evaluation with {eval_samples} samples...")
+        print(f"Starting evaluation with {eval_samples} samples...")
         
         test_data = load_test_data(eval_samples, self.config)
         
@@ -45,17 +45,17 @@ class ModelEvaluator:
         for metric, value in results.items():
             mlflow.log_metric(f"eval_{metric}", value)
         
-        print("✅ Evaluation complete!")
+        print("Evaluation complete!")
         return results
     
     def _evaluate_perplexity(self, test_data: List[Dict]) -> float:
         """Calculate perplexity."""
-        print("📊 Calculating perplexity...")
+        print("Calculating perplexity...")
         return calculate_perplexity(self.model, self.tokenizer, test_data, self.config)
     
     def _evaluate_generation_quality(self, test_data: List[Dict]) -> Dict[str, float]:
         """Evaluate generation quality."""
-        print("📝 Evaluating generation quality...")
+        print("Evaluating generation quality...")
         
         predictions, references = [], []
         
