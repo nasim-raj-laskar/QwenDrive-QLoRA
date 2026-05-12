@@ -5,6 +5,7 @@ from src.model import load_tokenizer, load_model
 from src.trainer import build_trainer, train_and_save
 from src.utils.mlflow import init_mlflow
 from src.metrics.metrics import *
+from src.evaluation import run_evaluation
 
 def setup_directories():
     """Create necessary directories."""
@@ -42,3 +43,11 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
         # Log final artifacts
         log_adapter_config(train_cfg["training"]["output_dir"])
         log_memory_usage()
+        
+        # Run evaluation
+        print("\n🔍 Starting post-training evaluation...")
+        eval_results = run_evaluation(model, tokenizer, eval_samples=100)
+        
+        print("\n📊 Evaluation Results:")
+        for metric, value in eval_results.items():
+            print(f"  {metric}: {value:.4f}")

@@ -14,3 +14,7 @@ torch
 transformers
 mlflow
 python-dotenv
+evaluate
+rouge_score
+absl-py
+nltk
