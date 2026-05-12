@@ -3,6 +3,7 @@ import mlflow
 import warnings
 import os
 import yaml
+from datetime import datetime
 from transformers import pipeline
 import numpy as np
 from typing import Dict, List
@@ -40,6 +41,9 @@ class ModelEvaluator:
         results["perplexity"] = self._evaluate_perplexity(test_data)
         results.update(self._evaluate_generation_quality(test_data))
         results.update(self._evaluate_performance(test_data))
+        
+        # Save results to file
+        self._save_results_to_file(results, eval_samples)
         
         # Log to MLflow
         for metric, value in results.items():
@@ -111,6 +115,18 @@ class ModelEvaluator:
             "avg_latency_ms": avg_latency * 1000,
             "token_throughput": throughput
         }
+    
+    def _save_results_to_file(self, results: Dict[str, float], eval_samples: int):
+        """Save evaluation results to text file."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"output/eval_results_{timestamp}.txt"
+        
+        with open(filename, "w") as f:
+            f.write(f"Evaluation Results - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Samples: {eval_samples}\n")
+            f.write("=" * 50 + "\n")
+            for metric, value in results.items():
+                f.write(f"{metric}: {value:.4f}\n")
 
 def run_evaluation(model, tokenizer, eval_samples: int = 100) -> Dict[str, float]:
     """Run model evaluation and return results."""
