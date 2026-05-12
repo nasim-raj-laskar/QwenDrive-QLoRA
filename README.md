@@ -64,9 +64,9 @@ flowchart LR
 
 **Fine-Tuning Technique — LoRA**
 
-LoRA (Low-Rank Adaptation) avoids updating the full weight matrices by decomposing the weight update $\Delta W$ into two small matrices: $\Delta W = A \times B$, where $A \in \mathbb{R}^{d \times r}$ and $B \in \mathbb{R}^{r \times k}$ with rank $r \ll d$. Only $A$ and $B$ are trained; the original frozen weights are never modified.
+LoRA (Low-Rank Adaptation) avoids updating the full weight matrices by decomposing the weight update ΔW into two small matrices: ΔW = A × B, where A ∈ ℝ^(d×r) and B ∈ ℝ^(r×k) with rank r ≪ d. Only A and B are trained; the original frozen weights are never modified.
 
-With $r=16$ and $\text{lora\_alpha}=32$ (scaling factor $\alpha/r = 2.0$), the adapter output is scaled to prevent the low-rank updates from being too small relative to the frozen weights. Dropout of 0.05 is applied to the adapter inputs for regularization.
+With r=16 and lora_alpha=32 (scaling factor α/r = 2.0), the adapter output is scaled to prevent the low-rank updates from being too small relative to the frozen weights. Dropout of 0.05 is applied to the adapter inputs for regularization.
 
 ```mermaid
 flowchart TB
