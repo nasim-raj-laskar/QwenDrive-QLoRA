@@ -6,3 +6,5 @@ creds.txt
 .venv/
 venv/
 the-one-who-tunes_accessKeys.csv
+models/
+output/

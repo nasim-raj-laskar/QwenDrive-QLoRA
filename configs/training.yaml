@@ -1,11 +1,11 @@
 data:
   file: "data/automotive_en_dataset.jsonl"
-  sample_size: 500
+  sample_size: 400
   shuffle_seed: 42
   system_prompt: "You are an automotive expert assistant."
 
 training:
-  output_dir: "./qwen3b-automotive"
+  output_dir: "./output/qwen3b-automotive"
   num_train_epochs: 1
   per_device_train_batch_size: 4
   gradient_accumulation_steps: 2

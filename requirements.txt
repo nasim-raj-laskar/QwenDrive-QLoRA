@@ -4,12 +4,11 @@ datasets==3.5.0
 accelerate==1.7.0
 peft==0.15.2
 trl==0.18.1
-sentencepiece==0.1.99
+sentencepiece
 einops
 scipy
 safetensors
 bitsandbytes
 pyyaml
-# local only
-sagemaker>=2.48,<3
-python-dotenv
+torch
+transformers
