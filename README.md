@@ -5,29 +5,17 @@ Fine-tunes `Qwen/Qwen2.5-3B-Instruct` on an automotive Q&A dataset using **QLoRA
 **Training Pipeline**
 
 ```mermaid
-<<<<<<< HEAD
 flowchart TD
     A[JSONL Dataset 44K rows] -->|shuffle + sample| B[Format Chat Template]
-    B -->|system → user → assistant| C[Tokenize up to 512 tokens]
+    B -->|system to user to assistant| C[Tokenize up to 512 tokens]
     C --> G
 
     D[Qwen2.5-3B-Instruct] -->|NF4 4-bit quantization| E[Quantized Base Model]
-    E -->|inject LoRA adapters| F[PEFT Model ~30M trainable params]
+    E -->|inject LoRA adapters| F[PEFT Model 30M trainable params]
     F --> G[SFTTrainer]
 
-    G -->|1 epoch · cosine LR| H[Fine-Tuned LoRA Adapter]
-    H --> I[Post-Training Evaluation]
-=======
-flowchart LR
-    A[JSONL Dataset\n44K rows] -->|shuffle + sample| B[Format Chat Template\nsystem → user → assistant]
-    B -->|tokenize up to 512 tokens| C[Training Dataset]
-    D[Qwen2.5-3B-Instruct] -->|NF4 4-bit quantization| E[Quantized Base Model\nfrozen weights]
-    E -->|inject LoRA adapters| F[PEFT Model\n~30M trainable params]
-    C --> G[SFTTrainer]
-    F --> G
     G -->|1 epoch, cosine LR| H[Fine-Tuned LoRA Adapter]
-    H --> I[Post-Training Evaluation\nperplexity · BLEU · latency]
->>>>>>> 962c04227912957eb0789f70d068c487feac207f
+    H --> I[Post-Training Evaluation]
     G -->|params + metrics| J[MLflow / DagsHub]
 ```
 
@@ -117,7 +105,7 @@ LoRA is injected into all seven projection layers across every transformer block
 Samples are drawn from a 44,773-row automotive Q&A JSONL file. Each row contains a `conversations` field with two turns (human → assistant). These are wrapped into a three-turn chat template (system → user → assistant) using the model's native `apply_chat_template`, which produces the exact token format the model was instruction-tuned on. The sample size is controlled via `configs/training.yaml`.
 
 ```mermaid
-flowchart 
+flowchart LR
     A[Raw JSONL row\nconversations: human + gpt] -->|extract turns| B[system: automotive expert\nuser: human value\nassistant: gpt value]
     B -->|apply_chat_template| C[Formatted string\nim_start / im_end tokens]
     C -->|tokenize + truncate| D[Input IDs\nmax 512 tokens]
@@ -127,10 +115,6 @@ flowchart
 |---|---|
 | Source file | `automotive_en_dataset.jsonl` |
 | Total rows | 44,773 |
-<<<<<<< HEAD
-=======
-| Training samples | configurable (`sample_size` in `training.yaml`) |
->>>>>>> 962c04227912957eb0789f70d068c487feac207f
 | Shuffle seed | 42 |
 | System prompt | `You are an automotive expert assistant.` |
 | Max sequence length | 512 tokens |
