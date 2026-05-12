@@ -3,3 +3,6 @@ creds.txt
 *.log
 *__pycache__/
 *.pyc
+.venv/
+venv/
+the-one-who-tunes_accessKeys.csv
