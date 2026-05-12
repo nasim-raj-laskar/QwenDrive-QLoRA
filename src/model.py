@@ -5,12 +5,29 @@ import os
 
 def load_tokenizer(model_name, trust_remote_code):
     os.environ["HF_HOME"] = "./models/hf_cache"
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=trust_remote_code, cache_dir="./models/hf_cache")
+    
+    # Check if model is already cached
+    cache_dir = "./models/hf_cache"
+    if os.path.exists(cache_dir):
+        print("Using cached model files")
+    
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name, 
+        trust_remote_code=trust_remote_code, 
+        cache_dir=cache_dir,
+        local_files_only=os.path.exists(cache_dir)
+    )
     tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
 
 def load_model(model_cfg, lora_cfg):
     os.environ["HF_HOME"] = "./models/hf_cache"
+    cache_dir = "./models/hf_cache"
+    
+    # Check if model is already cached
+    if os.path.exists(cache_dir):
+        print("Using cached model files")
+    
     dtype_map = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}
     q = model_cfg["quantization"]
 
@@ -26,7 +43,8 @@ def load_model(model_cfg, lora_cfg):
         quantization_config=bnb_config,
         device_map=model_cfg["device_map"],
         trust_remote_code=model_cfg["trust_remote_code"],
-        cache_dir="./models/hf_cache"
+        cache_dir=cache_dir,
+        local_files_only=os.path.exists(cache_dir)
     )
 
     lora_config = LoraConfig(**lora_cfg)

@@ -47,7 +47,7 @@ def log_dataset_params(dataset_info: Dict[str, Any]):
     mlflow.log_params({
         "dataset_name": "automotive_en_dataset",
         "total_samples": dataset_info.get("total_samples"),
-        "training_samples": dataset_info.get("training_samples"),
+        "sample_size": dataset_info.get("sample_size"),
         "shuffle_seed": dataset_info.get("shuffle_seed")
     })
 
