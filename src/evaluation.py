@@ -2,6 +2,7 @@ import time
 import mlflow
 import warnings
 import os
+import yaml
 from transformers import pipeline
 import numpy as np
 from typing import Dict, List
@@ -12,10 +13,16 @@ from src.metrics.eval_data import load_test_data
 warnings.filterwarnings("ignore")
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
+def load_eval_config():
+    """Load evaluation configuration."""
+    with open("configs/eval.yaml") as f:
+        return yaml.safe_load(f)["evaluation"]
+
 class ModelEvaluator:
     def __init__(self, model, tokenizer):
         self.model = model
         self.tokenizer = tokenizer
+        self.config = load_eval_config()
         self.pipe = pipeline(
             "text-generation", 
             model=model, 
@@ -27,7 +34,7 @@ class ModelEvaluator:
         """Run comprehensive evaluation."""
         print(f"🔍 Starting evaluation with {eval_samples} samples...")
         
-        test_data = load_test_data(eval_samples)
+        test_data = load_test_data(eval_samples, self.config)
         
         results = {}
         results["perplexity"] = self._evaluate_perplexity(test_data)
@@ -44,7 +51,7 @@ class ModelEvaluator:
     def _evaluate_perplexity(self, test_data: List[Dict]) -> float:
         """Calculate perplexity."""
         print("📊 Calculating perplexity...")
-        return calculate_perplexity(self.model, self.tokenizer, test_data)
+        return calculate_perplexity(self.model, self.tokenizer, test_data, self.config)
     
     def _evaluate_generation_quality(self, test_data: List[Dict]) -> Dict[str, float]:
         """Evaluate generation quality."""
@@ -52,15 +59,15 @@ class ModelEvaluator:
         
         predictions, references = [], []
         
-        for item in test_data[:5]:
+        for item in test_data[:self.config["generation_samples"]]:
             prompt = f"User: {item['input']}\nAssistant:"
             
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 result = self.pipe(
                     prompt,
-                    max_new_tokens=20,
-                    do_sample=False,
+                    max_new_tokens=self.config["max_new_tokens_quality"],
+                    do_sample=self.config["do_sample"],
                     return_full_text=False,
                     pad_token_id=self.tokenizer.eos_token_id
                 )
@@ -79,7 +86,7 @@ class ModelEvaluator:
         
         latencies, total_tokens = [], 0
         
-        for item in test_data[:3]:
+        for item in test_data[:self.config["performance_samples"]]:
             prompt = f"User: {item['input']}\nAssistant:"
             
             start_time = time.time()
@@ -87,8 +94,8 @@ class ModelEvaluator:
                 warnings.simplefilter("ignore")
                 result = self.pipe(
                     prompt,
-                    max_new_tokens=10,
-                    do_sample=False,
+                    max_new_tokens=self.config["max_new_tokens_performance"],
+                    do_sample=self.config["do_sample"],
                     return_full_text=False,
                     pad_token_id=self.tokenizer.eos_token_id
                 )

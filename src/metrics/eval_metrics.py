@@ -2,12 +2,12 @@ import torch
 import numpy as np
 from typing import Dict, List
 
-def calculate_perplexity(model, tokenizer, test_data: List[Dict]) -> float:
+def calculate_perplexity(model, tokenizer, test_data: List[Dict], config: Dict) -> float:
     """Calculate perplexity on test data."""
     perplexities = []
-    for item in test_data[:20]:
+    for item in test_data[:config["perplexity_samples"]]:
         text = f"User: {item['input']}\nAssistant: {item['target']}"
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
+        inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=config["max_seq_length"])
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
         
         with torch.no_grad():

@@ -1,0 +1,18 @@
+evaluation:
+  # Sample sizes for different metrics
+  perplexity_samples: 10
+  generation_samples: 5
+  performance_samples: 3
+  
+  # Generation parameters
+  max_new_tokens_quality: 20
+  max_new_tokens_performance: 10
+  
+  # Model parameters
+  max_seq_length: 512
+  do_sample: false
+  temperature: 0.1
+  
+  # Data parameters
+  test_seed: 123
+  data_file: "data/automotive_en_dataset.jsonl"
