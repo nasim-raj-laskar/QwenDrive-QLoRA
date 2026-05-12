@@ -1,18 +1,22 @@
-Fine-tunes `Qwen/Qwen2.5-3B-Instruct` on an automotive Q&A dataset using **QLoRA** — a memory-efficient technique that combines 4-bit quantization (via BitsAndBytes) with low-rank adapter training (via PEFT/LoRA). The base model weights are frozen and quantized to NF4 format with bfloat16 compute dtype and double quantization enabled, drastically reducing VRAM usage while preserving training quality.
+Fine-tunes `Qwen/Qwen2.5-3B-Instruct` on an automotive Q&A dataset using **QLoRA** — a memory-efficient technique that combines 4-bit quantization (via BitsAndBytes) with low-rank adapter training (via PEFT/LoRA). The base model weights are frozen and quantized to NF4 format with bfloat16 compute dtype and double quantization enabled, drastically reducing VRAM usage while preserving training quality. All hyperparameters are config-driven via YAML files under `configs/`. Training is tracked end-to-end with **MLflow** (via DagsHub), and a post-training evaluation suite runs automatically after each training run.
 
 ---
 
 **Training Pipeline**
 
 ```mermaid
-flowchart LR
-    A[JSONL Dataset\n44K rows] -->|shuffle + sample 4K| B[Format Chat Template\nsystem → user → assistant]
-    B -->|tokenize up to 512 tokens| C[Training Dataset]
-    D[Qwen2.5-3B-Instruct] -->|NF4 4-bit quantization| E[Quantized Base Model\nfrozen weights]
-    E -->|inject LoRA adapters| F[PEFT Model\n~30M trainable params]
-    C --> G[SFTTrainer]
-    F --> G
-    G -->|1 epoch, cosine LR| H[Fine-Tuned LoRA Adapter]
+flowchart TD
+    A[JSONL Dataset 44K rows] -->|shuffle + sample| B[Format Chat Template]
+    B -->|system → user → assistant| C[Tokenize up to 512 tokens]
+    C --> G
+
+    D[Qwen2.5-3B-Instruct] -->|NF4 4-bit quantization| E[Quantized Base Model]
+    E -->|inject LoRA adapters| F[PEFT Model ~30M trainable params]
+    F --> G[SFTTrainer]
+
+    G -->|1 epoch · cosine LR| H[Fine-Tuned LoRA Adapter]
+    H --> I[Post-Training Evaluation]
+    G -->|params + metrics| J[MLflow / DagsHub]
 ```
 
 ---
@@ -98,7 +102,7 @@ LoRA is injected into all seven projection layers across every transformer block
 
 **Dataset**
 
-4,000 samples are drawn from a 44,773-row automotive Q&A JSONL file. Each row contains a `conversations` field with two turns (human → assistant). These are wrapped into a three-turn chat template (system → user → assistant) using the model's native `apply_chat_template`, which produces the exact token format the model was instruction-tuned on.
+Samples are drawn from a 44,773-row automotive Q&A JSONL file. Each row contains a `conversations` field with two turns (human → assistant). These are wrapped into a three-turn chat template (system → user → assistant) using the model's native `apply_chat_template`, which produces the exact token format the model was instruction-tuned on. The sample size is controlled via `configs/training.yaml`.
 
 ```mermaid
 flowchart LR
@@ -111,7 +115,6 @@ flowchart LR
 |---|---|
 | Source file | `automotive_en_dataset.jsonl` |
 | Total rows | 44,773 |
-| Training samples | 4,000 |
 | Shuffle seed | 42 |
 | System prompt | `You are an automotive expert assistant.` |
 | Max sequence length | 512 tokens |
@@ -127,7 +130,7 @@ Gradient accumulation over 2 steps gives an effective batch size of 8 without re
 
 | Parameter | Value | Notes |
 |---|---|---|
-| Epochs | 1 | Single pass over 4K samples |
+| Epochs | 1 | Single pass over training samples |
 | Batch size | 4 | Per device |
 | Gradient accumulation | 2 | Effective batch = 8 |
 | Learning rate | 5e-5 | Peak LR |
@@ -137,6 +140,84 @@ Gradient accumulation over 2 steps gives an effective batch size of 8 without re
 | Precision | bfloat16 | Mixed precision training |
 | Max sequence length | 512 | Truncates longer examples |
 | Packing | false | No sequence packing |
+
+---
+
+**Post-Training Evaluation**
+
+After training completes, `src/evaluation.py` automatically runs a suite of metrics against held-out samples from the same dataset. Results are logged to MLflow and saved to `output/eval_results_<timestamp>.txt`.
+
+| Metric | Description |
+|---|---|
+| Perplexity | Cross-entropy loss exponentiated over test samples |
+| BLEU (approx) | Word-overlap precision between generated and reference answers |
+| Exact match | Fraction of generated answers that exactly match the reference |
+| Avg latency (ms) | Mean generation time per prompt |
+| Token throughput | Generated tokens per second |
+
+Evaluation sample sizes and generation parameters are controlled via `configs/eval.yaml`.
+
+---
+
+**Inference**
+
+`src/inference.py` exposes a `run_inference` function that wraps the fine-tuned model in a `text-generation` pipeline. Generation parameters are loaded from `configs/inference.yaml`.
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `max_new_tokens` | 120 | Maximum tokens to generate |
+| `temperature` | 0.7 | Sampling temperature |
+| `top_p` | 0.9 | Nucleus sampling threshold |
+| `repetition_penalty` | 1.1 | Penalizes repeated tokens |
+| `do_sample` | true | Enables stochastic sampling |
+| `eos_token` | `<\|im_end\|>` | Stop token for ChatML format |
+
+---
+
+**Experiment Tracking — MLflow**
+
+All training runs are tracked via MLflow, backed by a DagsHub remote. The following are logged automatically:
+
+- Model, quantization, LoRA, training, and dataset parameters
+- GPU memory usage (allocated and reserved) at start and end of training
+- Final training metrics (loss, runtime, samples/sec)
+- Post-training evaluation metrics (perplexity, BLEU, exact match, latency, throughput)
+- `adapter_config.json` and `model_summary.json` as artifacts
+
+Configure the tracking URI and credentials via `.env`:
+
+```
+MLFLOW_TRACKING_URI=<dagshub_mlflow_uri>
+DAGSHUB_USERNAME=<username>
+DAGSHUB_TOKEN=<token>
+```
+
+---
+
+**Project Structure**
+
+```
+├── configs/
+│   ├── model.yaml        # Model name, quantization settings
+│   ├── lora.yaml         # LoRA rank, alpha, dropout, target modules
+│   ├── training.yaml     # SFTTrainer args, dataset sampling
+│   ├── eval.yaml         # Evaluation sample sizes and generation params
+│   └── inference.yaml    # Inference generation parameters
+├── data/
+│   └── automotive_en_dataset.jsonl
+├── src/
+│   ├── data.py           # Dataset loading and chat template formatting
+│   ├── model.py          # Tokenizer, quantized model, LoRA injection
+│   ├── trainer.py        # SFTTrainer construction and training loop
+│   ├── evaluation.py     # Post-training evaluation suite
+│   ├── inference.py      # Inference pipeline wrapper
+│   ├── pipeline.py       # End-to-end orchestration
+│   ├── metrics/          # MLflow logging helpers and eval metric functions
+│   └── utils/            # Logger and MLflow init utilities
+├── scripts/              # Shell utilities (GPU check, cleanup, HF push)
+├── output/               # Saved adapter weights and eval results
+└── train.py              # Entry point
+```
 
 ---
 
