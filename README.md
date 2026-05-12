@@ -14,7 +14,7 @@ flowchart TD
     E -->|inject LoRA adapters| F[PEFT Model 30M trainable params]
     F --> G[SFTTrainer]
 
-    G -->|1 epoch, cosine LR| H[Fine-Tuned LoRA Adapter]
+    G -->|n epoch, cosine LR| H[Fine-Tuned LoRA Adapter]
     H --> I[Post-Training Evaluation]
     G -->|params + metrics| J[MLflow / DagsHub]
 ```
@@ -231,4 +231,17 @@ DAGSHUB_TOKEN=<token>
 | Optimizer states (paged 8-bit) | ~0.5 GB on GPU |
 | **Total** | **~10–12 GB** |
 
-Requires a CUDA GPU with at least **16GB VRAM** (e.g. A10G, A100, RTX 3090/4090). Python 3.10+.
+---
+
+**Training Hardware**
+
+| Component | Specification |
+|---|---|
+| GPU | 1× NVIDIA A10G Tensor Core GPU |
+| GPU VRAM | 24 GB GDDR6 |
+| vCPUs | 8 |
+| RAM | 32 GiB |
+| CPU | AMD EPYC 7R32 |
+| Storage | NVMe SSD attached |
+| Network | Up to 10 Gbps |
+| Architecture | x86_64 |
