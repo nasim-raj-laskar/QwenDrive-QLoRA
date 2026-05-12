@@ -3,6 +3,8 @@ data:
   sample_size: 400
   shuffle_seed: 42
   system_prompt: "You are an automotive expert assistant."
+  total_samples: 44773
+  training_samples: 4000
 
 training:
   output_dir: "./output/qwen3b-automotive"

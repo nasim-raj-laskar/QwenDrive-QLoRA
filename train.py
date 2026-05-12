@@ -4,9 +4,7 @@ os.environ["USE_TF"] = "0"
 os.environ["USE_TORCH"] = "1"
 
 import yaml
-from src.data import load_and_prepare
-from src.model import load_tokenizer, load_model
-from src.trainer import build_trainer, train_and_save
+from src.pipeline import setup_directories, run_training_pipeline
 
 def load_config(path):
     with open(path) as f:
@@ -17,15 +15,8 @@ def main():
     lora_cfg = load_config("configs/lora.yaml")
     train_cfg = load_config("configs/training.yaml")
     
-    os.makedirs("models", exist_ok=True)
-    os.makedirs("output", exist_ok=True)
-    
-    tokenizer = load_tokenizer(model_cfg["model_name"], model_cfg["trust_remote_code"])
-    dataset = load_and_prepare(train_cfg["data"], tokenizer, save_sample_path="output/training_sample.jsonl")
-    model = load_model(model_cfg, lora_cfg)
-    
-    trainer = build_trainer(model, dataset, train_cfg["training"])
-    train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"])
+    setup_directories()
+    run_training_pipeline(model_cfg, lora_cfg, train_cfg)
 
 if __name__ == "__main__":
     main()

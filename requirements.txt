@@ -12,3 +12,5 @@ bitsandbytes
 pyyaml
 torch
 transformers
+mlflow
+python-dotenv
