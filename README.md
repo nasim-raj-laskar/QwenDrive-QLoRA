@@ -239,9 +239,9 @@ DAGSHUB_TOKEN=<token>
 |---|---|
 | GPU | 1× NVIDIA A10G Tensor Core GPU |
 | GPU VRAM | 24 GB GDDR6 |
-| vCPUs | 8 |
-| RAM | 32 GiB |
+| vCPUs | 4 |
+| RAM | 16 GiB |
 | CPU | AMD EPYC 7R32 |
 | Storage | NVMe SSD attached |
-| Network | Up to 10 Gbps |
+| Network | 1 Gbps |
 | Architecture | x86_64 |
