@@ -18,3 +18,4 @@ evaluate
 rouge_score
 absl-py
 nltk
+pynvml

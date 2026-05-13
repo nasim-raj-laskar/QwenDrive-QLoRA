@@ -1,5 +1,6 @@
 from trl import SFTConfig, SFTTrainer
 import mlflow
+import time
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -14,10 +15,26 @@ def build_trainer(model, dataset, training_cfg):
     return trainer
 
 
-def train_and_save(trainer, tokenizer, output_dir):
+def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None):
     logger.info("Starting model training...")
+    
+    # Record training start time for tokens/sec calculation
+    start_time = time.time()
+    
     # Train with automatic metric logging
     result = trainer.train()
+    
+    # Calculate training duration and tokens/sec
+    end_time = time.time()
+    training_duration = end_time - start_time
+    
+    if gpu_profiler and hasattr(trainer, 'train_dataset'):
+        # Estimate total tokens processed
+        total_samples = len(trainer.train_dataset)
+        avg_tokens_per_sample = 256  # Rough estimate
+        total_tokens = total_samples * avg_tokens_per_sample
+        gpu_profiler.record_tokens_per_sec(total_tokens, training_duration)
+    
     logger.info("Training completed")
     
     # Log final training metrics

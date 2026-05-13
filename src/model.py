@@ -18,8 +18,7 @@ def load_tokenizer(model_name, trust_remote_code):
     tokenizer = AutoTokenizer.from_pretrained(
         model_name, 
         trust_remote_code=trust_remote_code, 
-        cache_dir=cache_dir,
-        local_files_only=os.path.exists(cache_dir)
+        cache_dir=cache_dir
     )
     tokenizer.pad_token = tokenizer.eos_token
     logger.info(f"Tokenizer loaded successfully. Vocab size: {tokenizer.vocab_size}")
@@ -51,8 +50,7 @@ def load_model(model_cfg, lora_cfg):
         quantization_config=bnb_config,
         device_map=model_cfg["device_map"],
         trust_remote_code=model_cfg["trust_remote_code"],
-        cache_dir=cache_dir,
-        local_files_only=os.path.exists(cache_dir)
+        cache_dir=cache_dir
     )
 
     logger.info(f"Applying LoRA config: {lora_cfg}")

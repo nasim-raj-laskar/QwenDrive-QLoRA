@@ -20,9 +20,10 @@ def load_eval_config():
         return yaml.safe_load(f)["evaluation"]
 
 class ModelEvaluator:
-    def __init__(self, model, tokenizer):
+    def __init__(self, model, tokenizer, gpu_profiler=None):
         self.model = model
         self.tokenizer = tokenizer
+        self.gpu_profiler = gpu_profiler
         self.config = load_eval_config()
         self.pipe = pipeline(
             "text-generation", 
@@ -71,6 +72,7 @@ class ModelEvaluator:
                 result = self.pipe(
                     prompt,
                     max_new_tokens=self.config["max_new_tokens_quality"],
+                    max_length=None,
                     do_sample=self.config["do_sample"],
                     return_full_text=False,
                     pad_token_id=self.tokenizer.eos_token_id
@@ -99,14 +101,22 @@ class ModelEvaluator:
                 result = self.pipe(
                     prompt,
                     max_new_tokens=self.config["max_new_tokens_performance"],
+                    max_length=None,
                     do_sample=self.config["do_sample"],
                     return_full_text=False,
                     pad_token_id=self.tokenizer.eos_token_id
                 )
             end_time = time.time()
             
-            latencies.append(end_time - start_time)
-            total_tokens += len(self.tokenizer.encode(result[0]["generated_text"]))
+            duration = end_time - start_time
+            latencies.append(duration)
+            
+            generated_tokens = len(self.tokenizer.encode(result[0]["generated_text"]))
+            total_tokens += generated_tokens
+            
+            # Record tokens/sec for GPU profiler
+            if self.gpu_profiler:
+                self.gpu_profiler.record_tokens_per_sec(generated_tokens, duration)
         
         avg_latency = np.mean(latencies)
         throughput = total_tokens / sum(latencies) if sum(latencies) > 0 else 0
@@ -121,14 +131,37 @@ class ModelEvaluator:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"output/eval_results_{timestamp}.txt"
         
+        # Get GPU metrics if profiler is available
+        gpu_metrics = {}
+        if self.gpu_profiler:
+            gpu_metrics = self.gpu_profiler.get_metrics()
+        
         with open(filename, "w") as f:
             f.write(f"Evaluation Results - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"Samples: {eval_samples}\n")
             f.write("=" * 50 + "\n")
-            for metric, value in results.items():
-                f.write(f"{metric}: {value:.4f}\n")
+            
+            # Write evaluation metrics
+            f.write("EVALUATION METRICS:\n")
+            f.write(f"Perplexity:           {results.get('perplexity', 0):.2f}\n")
+            f.write(f"Exact Match:          {results.get('exact_match', 0):.1%}\n")
+            f.write(f"BLEU (approx):        {results.get('bleu_approx', 0):.1%}\n")
+            f.write(f"Avg Latency:          {results.get('avg_latency_ms', 0):.0f} ms\n")
+            f.write(f"Token Throughput:     {results.get('token_throughput', 0):.1f} tokens/sec\n")
+            
+            # Write GPU metrics if available
+            if gpu_metrics:
+                f.write("\nGPU METRICS:\n")
+                f.write(f"VRAM Peak:            {gpu_metrics.get('gpu_vram_peak_gb', 0):.2f} GB\n")
+                f.write(f"GPU Utilization Avg:  {gpu_metrics.get('gpu_utilization_avg', 0):.1f}%\n")
+                f.write(f"GPU Utilization Max:  {gpu_metrics.get('gpu_utilization_max', 0):.1f}%\n")
+                f.write(f"Tokens/sec Avg:       {gpu_metrics.get('tokens_per_sec_avg', 0):.0f} tokens/sec\n")
+                f.write(f"Tokens/sec Max:       {gpu_metrics.get('tokens_per_sec_max', 0):.0f} tokens/sec\n")
+        
+        # Log as MLflow artifact
+        mlflow.log_artifact(filename)
 
-def run_evaluation(model, tokenizer, eval_samples: int = 100) -> Dict[str, float]:
+def run_evaluation(model, tokenizer, eval_samples: int = 100, gpu_profiler=None) -> Dict[str, float]:
     """Run model evaluation and return results."""
-    evaluator = ModelEvaluator(model, tokenizer)
+    evaluator = ModelEvaluator(model, tokenizer, gpu_profiler)
     return evaluator.evaluate_model(eval_samples)

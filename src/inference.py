@@ -12,6 +12,7 @@ def run_inference(model, tokenizer, cfg: dict):
     result = pipe(
         text,
         max_new_tokens=cfg["max_new_tokens"],
+        max_length=None,
         temperature=cfg["temperature"],
         top_p=cfg["top_p"],
         repetition_penalty=cfg["repetition_penalty"],

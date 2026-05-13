@@ -6,6 +6,7 @@ from src.trainer import build_trainer, train_and_save
 from src.utils.mlflow import init_mlflow
 from src.utils.logger import setup_logger
 from src.metrics.metrics import *
+from src.metrics.gpu_profiler import GPUProfiler
 from src.evaluation import run_evaluation
 
 logger = setup_logger(__name__)
@@ -32,8 +33,14 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
     logger.info("Starting training pipeline...")
     init_mlflow()
     
+    # Initialize GPU profiler
+    gpu_profiler = GPUProfiler()
+    
     with mlflow.start_run(run_name="qwen-drive-lora-training"):
         log_all_params(model_cfg, lora_cfg, train_cfg)
+        
+        # Start GPU monitoring
+        gpu_profiler.start_monitoring()
         
         # Load components
         logger.info("Loading components...")
@@ -49,7 +56,11 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
         # Train
         logger.info("Starting training...")
         trainer = build_trainer(model, dataset, train_cfg["training"])
-        train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"])
+        train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"], gpu_profiler)
+        
+        # Stop GPU monitoring and log metrics
+        gpu_profiler.stop_monitoring()
+        gpu_metrics = gpu_profiler.log_to_mlflow()
         
         # Log final artifacts
         logger.info("Logging final artifacts...")
@@ -58,7 +69,7 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
         
         # Run evaluation
         logger.info("Starting post-training evaluation...")
-        eval_results = run_evaluation(model, tokenizer, eval_samples=100)
+        eval_results = run_evaluation(model, tokenizer, eval_samples=100, gpu_profiler=gpu_profiler)
         
         logger.info("Evaluation Results:")
         for metric, value in eval_results.items():
