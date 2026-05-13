@@ -4,6 +4,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 import yaml
+from transformers import TextStreamer
 from src.model import load_tokenizer, load_model
 from src.inference import run_inference
 
@@ -51,12 +52,32 @@ def test_model():
     print("Model loaded successfully!")
     print("=" * 50)
     
+    # Setup streaming
+    streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+    
+    def stream_response(prompt):
+        messages = [{"role": "system", "content": "You are an automotive expert assistant."}, 
+                   {"role": "user", "content": prompt}]
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = tokenizer(text, return_tensors="pt").to(model.device)
+        
+        model.generate(
+            **inputs,
+            streamer=streamer,
+            max_new_tokens=inference_cfg.get("max_new_tokens", 256),
+            temperature=inference_cfg.get("temperature", 0.7),
+            top_p=inference_cfg.get("top_p", 0.9),
+            do_sample=inference_cfg.get("do_sample", True),
+            repetition_penalty=inference_cfg.get("repetition_penalty", 1.1),
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id
+        )
+    
     # Test with config prompt
     print(f"Prompt: {inference_cfg['prompt']}")
     print("Response:")
-    response = run_inference(model, tokenizer, inference_cfg)
-    print(response)
-    print("=" * 50)
+    stream_response(inference_cfg['prompt'])
+    print("\n" + "=" * 50)
     
     # Interactive testing
     while True:
@@ -64,12 +85,9 @@ def test_model():
         if user_input.lower() == 'quit':
             break
             
-        test_cfg = inference_cfg.copy()
-        test_cfg["prompt"] = user_input
-        
         print("Response:")
-        response = run_inference(model, tokenizer, test_cfg)
-        print(response)
+        stream_response(user_input)
+        print()
 
 if __name__ == "__main__":
     test_model()
