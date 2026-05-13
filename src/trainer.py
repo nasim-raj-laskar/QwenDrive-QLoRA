@@ -1,17 +1,51 @@
-from trl import SFTConfig, SFTTrainer
+from unsloth import is_bfloat16_supported, FastLanguageModel
+from trl import SFTTrainer
+from transformers import TrainingArguments
 import mlflow
 import time
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-
-def build_trainer(model, dataset, training_cfg):
-    logger.info("Building SFT trainer...")
+def build_trainer(model, tokenizer, dataset, training_cfg):
+    logger.info("Building Unsloth SFT trainer...")
     logger.info(f"Training config: {training_cfg}")
-    args = SFTConfig(**training_cfg)
-    trainer = SFTTrainer(model=model, train_dataset=dataset, args=args)
-    logger.info("SFT trainer built successfully")
+    
+    # Patch model to use standard cross-entropy loss
+    FastLanguageModel.for_training(model)
+    
+    # Use Unsloth's optimized trainer
+    trainer = SFTTrainer(
+        model=model,
+        tokenizer=tokenizer,
+        train_dataset=dataset,
+        dataset_text_field="text",
+        max_seq_length=512,
+        dataset_num_proc=2,
+        packing=False,
+        args=TrainingArguments(
+            per_device_train_batch_size=training_cfg.get("per_device_train_batch_size", 4),
+            gradient_accumulation_steps=training_cfg.get("gradient_accumulation_steps", 2),
+            warmup_steps=training_cfg.get("warmup_steps", 5),
+            num_train_epochs=training_cfg.get("num_train_epochs", 1),
+            learning_rate=training_cfg.get("learning_rate", 5e-5),
+            fp16=not is_bfloat16_supported(),
+            bf16=is_bfloat16_supported(),
+            logging_steps=1,
+            optim="adamw_8bit",
+            weight_decay=0.01,
+            lr_scheduler_type="cosine",
+            seed=3407,
+            output_dir=training_cfg.get("output_dir", "./output"),
+            save_strategy="epoch",
+            save_steps=training_cfg.get("save_steps", 500),
+            logging_dir="./logs",
+            report_to=None,
+            dataloader_drop_last=True,  # Ensure consistent batch sizes
+        ),
+    )
+    
+    logger.info("Unsloth SFT trainer built successfully")
     return trainer
 
 

@@ -20,27 +20,14 @@ def test_model():
     
     print("Loading trained model...")
     
-    # Load base model and tokenizer (without LoRA)
-    tokenizer = load_tokenizer(model_cfg["model_name"], model_cfg["trust_remote_code"])
+    # Load base model and tokenizer with Unsloth
+    from unsloth import FastLanguageModel
     
-    # Load base model with quantization only
-    from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-    import torch
-    
-    dtype_map = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}
-    q = model_cfg["quantization"]
-    
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=q["load_in_4bit"],
-        bnb_4bit_quant_type=q["bnb_4bit_quant_type"],
-        bnb_4bit_compute_dtype=dtype_map[q["bnb_4bit_compute_dtype"]],
-        bnb_4bit_use_double_quant=q["bnb_4bit_use_double_quant"],
-    )
-    
-    model = AutoModelForCausalLM.from_pretrained(
-        model_cfg["model_name"],
-        quantization_config=bnb_config,
-        device_map=model_cfg["device_map"],
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name=model_cfg["model_name"],
+        max_seq_length=512,
+        dtype=None,
+        load_in_4bit=True,
         trust_remote_code=model_cfg["trust_remote_code"],
         cache_dir="./models/hf_cache"
     )
