@@ -1,15 +1,23 @@
 #!/bin/bash
 
 # Load environment variables
-source .env
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+else
+    echo "❌ .env file not found!"
+    exit 1
+fi
 
 # Auto-login to HuggingFace
 echo "🔐 Logging into HuggingFace..."
-export HUGGING_FACE_HUB_TOKEN=$HF_TOKEN
 python -c "
 from huggingface_hub import login
 import os
-login(token=os.getenv('HF_TOKEN'), add_to_git_credential=True)
+token = os.getenv('HF_TOKEN')
+if not token:
+    print('❌ HF_TOKEN not found in environment')
+    exit(1)
+login(token=token, add_to_git_credential=True)
 print('✅ Successfully logged into HuggingFace')
 "
 
