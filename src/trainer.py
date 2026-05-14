@@ -40,7 +40,7 @@ def build_trainer(model, tokenizer, dataset, training_cfg):
             save_strategy="epoch",
             save_steps=training_cfg.get("save_steps", 500),
             logging_dir="./logs",
-            report_to=None,
+            report_to=["mlflow"],
             dataloader_drop_last=True,  # Ensure consistent batch sizes
         ),
     )

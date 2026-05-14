@@ -151,7 +151,7 @@ After training completes, `src/evaluation.py` automatically runs a suite of metr
 |---|---|
 | Perplexity | Cross-entropy loss exponentiated over test samples |
 | BLEU (approx) | Word-overlap precision between generated and reference answers |
-| Exact match | Fraction of generated answers that exactly match the reference |
+| Similarity | String similarity ratio between generated and reference answers |
 | Avg latency (ms) | Mean generation time per prompt |
 | Token throughput | Generated tokens per second |
 
@@ -181,7 +181,7 @@ All training runs are tracked via MLflow, backed by a DagsHub remote. The follow
 - Model, quantization, LoRA, training, and dataset parameters
 - GPU memory usage (allocated and reserved) at start and end of training
 - Final training metrics (loss, runtime, samples/sec)
-- Post-training evaluation metrics (perplexity, BLEU, exact match, latency, throughput)
+- Post-training evaluation metrics (perplexity, BLEU, similarity, latency, throughput)
 - `adapter_config.json` and `model_summary.json` as artifacts
 
 Configure the tracking URI and credentials via `.env`:

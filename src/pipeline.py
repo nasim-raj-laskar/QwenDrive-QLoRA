@@ -48,6 +48,7 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             
             # Log initial state
             logger.info("Logging initial state...")
+            log_all_params(model_cfg, lora_cfg, train_cfg)
             log_model_summary(model, tokenizer)
             log_memory_usage()
             
@@ -61,6 +62,7 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             
             # Log final artifacts
             logger.info("Logging final artifacts...")
+            log_adapter_config(train_cfg["training"]["output_dir"])
             log_memory_usage()
             
             # Run evaluation
