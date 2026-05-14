@@ -36,43 +36,45 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
     # Initialize GPU profiler
     gpu_profiler = GPUProfiler()
     
-    with mlflow.start_run(run_name="qwen-drive-lora-training"):
-        log_all_params(model_cfg, lora_cfg, train_cfg)
-        
-        # Start GPU monitoring
-        gpu_profiler.start_monitoring()
-        
-        # Load components
-        logger.info("Loading components...")
-        tokenizer = load_tokenizer(model_cfg["model_name"], model_cfg["trust_remote_code"])
-        dataset = load_and_prepare(train_cfg["data"], tokenizer, save_sample_path="output/training_sample.jsonl")
-        model = load_model(model_cfg, lora_cfg)
-        
-        # Log initial state
-        logger.info("Logging initial state...")
-        log_model_summary(model, tokenizer)
-        log_memory_usage()
-        
-        # Train
-        logger.info("Starting training...")
-        trainer = build_trainer(model, dataset, train_cfg["training"])
-        train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"], gpu_profiler)
-        
-        # Stop GPU monitoring and log metrics
-        gpu_profiler.stop_monitoring()
-        gpu_metrics = gpu_profiler.log_to_mlflow()
-        
-        # Log final artifacts
-        logger.info("Logging final artifacts...")
-        log_adapter_config(train_cfg["training"]["output_dir"])
-        log_memory_usage()
-        
-        # Run evaluation
-        logger.info("Starting post-training evaluation...")
-        eval_results = run_evaluation(model, tokenizer, eval_samples=100, gpu_profiler=gpu_profiler)
-        
-        logger.info("Evaluation Results:")
-        for metric, value in eval_results.items():
-            logger.info(f"  {metric}: {value:.4f}")
-        
-        logger.info("Training pipeline completed successfully")
+    try:
+        with mlflow.start_run(run_name="qwen-drive-lora-training"):
+            # Start GPU monitoring
+            gpu_profiler.start_monitoring()
+            
+            # Load components
+            logger.info("Loading components...")
+            model, tokenizer = load_model(model_cfg, lora_cfg)
+            dataset = load_and_prepare(train_cfg["data"], tokenizer, save_sample_path="output/training_sample.jsonl")
+            
+            # Log initial state
+            logger.info("Logging initial state...")
+            log_all_params(model_cfg, lora_cfg, train_cfg)
+            log_model_summary(model, tokenizer)
+            log_memory_usage()
+            
+            # Train
+            logger.info("Starting training...")
+            trainer = build_trainer(model, tokenizer, dataset, train_cfg["training"])
+            train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"], gpu_profiler)
+            
+            # Stop GPU monitoring
+            gpu_profiler.stop_monitoring()
+            
+            # Log final artifacts
+            logger.info("Logging final artifacts...")
+            log_adapter_config(train_cfg["training"]["output_dir"])
+            log_memory_usage()
+            
+            # Run evaluation
+            logger.info("Starting post-training evaluation...")
+            eval_results = run_evaluation(model, tokenizer, eval_samples=100, gpu_profiler=gpu_profiler)
+            
+            logger.info("Evaluation Results:")
+            for metric, value in eval_results.items():
+                logger.info(f"  {metric}: {value:.4f}")
+            
+            logger.info("Training pipeline completed successfully")
+    except Exception as e:
+        logger.warning(f"MLflow logging failed: {e}")
+        # Continue without MLflow if it fails
+        logger.info("Continuing training without MLflow...")

@@ -7,7 +7,7 @@ from datetime import datetime
 from transformers import pipeline
 import numpy as np
 from typing import Dict, List
-from src.metrics.eval_metrics import calculate_perplexity, calculate_bleu_approx, calculate_exact_match
+from src.metrics.eval_metrics import calculate_perplexity, calculate_bleu_approx, calculate_similarity
 from src.metrics.eval_data import load_test_data
 
 # Suppress warnings
@@ -82,8 +82,8 @@ class ModelEvaluator:
             references.append(item["target"].strip())
         
         return {
-            "exact_match": calculate_exact_match(predictions, references),
-            "bleu_approx": calculate_bleu_approx(predictions, references)
+            "bleu_approx": calculate_bleu_approx(predictions, references),
+            "similarity": calculate_similarity(predictions, references)
         }
     
     def _evaluate_performance(self, test_data: List[Dict]) -> Dict[str, float]:
@@ -144,8 +144,8 @@ class ModelEvaluator:
             # Write evaluation metrics
             f.write("EVALUATION METRICS:\n")
             f.write(f"Perplexity:           {results.get('perplexity', 0):.2f}\n")
-            f.write(f"Exact Match:          {results.get('exact_match', 0):.1%}\n")
             f.write(f"BLEU (approx):        {results.get('bleu_approx', 0):.1%}\n")
+            f.write(f"Similarity:           {results.get('similarity', 0):.1%}\n")
             f.write(f"Avg Latency:          {results.get('avg_latency_ms', 0):.0f} ms\n")
             f.write(f"Token Throughput:     {results.get('token_throughput', 0):.1f} tokens/sec\n")
             

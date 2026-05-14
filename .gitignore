@@ -7,5 +7,6 @@ creds.txt
 venv/
 the-one-who-tunes_accessKeys.csv
 models/
+unsloth_compiled_cache/
 output/
 logs/

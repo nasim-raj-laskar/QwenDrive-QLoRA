@@ -1,6 +1,6 @@
 data:
   file: "data/automotive_en_dataset.jsonl"
-  sample_size: 100
+  sample_size: 10000
   shuffle_seed: 42
   system_prompt: "You are an automotive expert assistant."
   total_samples: 44773
@@ -19,5 +19,5 @@ training:
   warmup_ratio: 0.03
   max_seq_length: 512
   packing: false
-  report_to: "none"
+  report_to: []
 
