@@ -1,6 +1,6 @@
 data:
   file: "data/automotive_en_dataset.jsonl"
-  sample_size: 10000
+  sample_size: 100
   shuffle_seed: 42
   system_prompt: "You are an automotive expert assistant."
   total_samples: 44773

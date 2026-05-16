@@ -5,8 +5,8 @@ evaluation:
   performance_samples: 3
   
   # Generation parameters
-  max_new_tokens_quality: 100
-  max_new_tokens_performance: 50
+  max_new_tokens_quality: 10
+  max_new_tokens_performance: 20
   
   # Model parameters
   max_seq_length: 512
