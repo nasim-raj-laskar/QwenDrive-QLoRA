@@ -115,7 +115,6 @@ def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_c
     # Train with manual metric logging
     result = trainer.train()
     
-    # Manually log training metrics since report_to is disabled
     if hasattr(result, 'metrics'):
         for key, value in result.metrics.items():
             mlflow.log_metric(key, value)
