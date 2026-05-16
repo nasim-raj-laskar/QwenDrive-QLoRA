@@ -78,7 +78,20 @@ def build_trainer(model, tokenizer, datasets, training_cfg):
 def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_cfg=None):
     logger.info("Starting model training with validation...")
     
-    # Custom callback for overfitting detection
+    # Custom callback for MLflow logging
+    class MLflowCallback(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            if logs:
+                # Log training metrics
+                step_metrics = {}
+                for key, value in logs.items():
+                    if key in ['loss', 'learning_rate', 'grad_norm', 'epoch']:
+                        step_metrics[key] = value
+                    elif key.startswith('eval_'):
+                        step_metrics[key] = value
+                if step_metrics:
+                    mlflow.log_metrics(step_metrics, step=state.global_step)
+    
     class ValidationCallback(TrainerCallback):
         def on_evaluate(self, args, state, control, metrics=None, **kwargs):
             if metrics:
@@ -93,6 +106,7 @@ def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_c
                         if metrics["eval_loss"] > avg_train_loss * threshold:
                             logger.warning(f" Potential overfitting detected: eval_loss ({metrics['eval_loss']:.4f}) >> train_loss ({avg_train_loss:.4f})")
     
+    trainer.add_callback(MLflowCallback())
     trainer.add_callback(ValidationCallback())
     
     # Record training start time for tokens/sec calculation
