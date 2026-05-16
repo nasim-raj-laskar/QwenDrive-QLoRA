@@ -2,6 +2,7 @@ import os
 import json
 import mlflow
 from typing import Dict, Any
+from src.utils.git_utils import get_git_metadata
 
 def log_model_params(model_config: Dict[str, Any]):
     """Log model configuration parameters."""
@@ -91,3 +92,34 @@ def log_adapter_config(output_dir: str):
     config_path = f"{output_dir}/adapter_config.json"
     if os.path.exists(config_path):
         mlflow.log_artifact(config_path)
+
+def log_git_metadata():
+    """Log git metadata to MLflow."""
+    git_meta = get_git_metadata()
+    mlflow.log_params(git_meta)
+    if git_meta["git_is_dirty"]:
+        from src.utils.logger import setup_logger
+        logger = setup_logger(__name__)
+        logger.warning("Repository has uncommitted changes")
+
+def save_config_snapshot(model_cfg, lora_cfg, training_cfg, data_cfg, output_dir="output"):
+    """Save complete runtime configuration snapshot."""
+    import yaml
+    from datetime import datetime
+    
+    runtime_config = {
+        "timestamp": datetime.now().isoformat(),
+        "git": get_git_metadata(),
+        "model": model_cfg,
+        "lora": lora_cfg,
+        "training": training_cfg,
+        "data": data_cfg
+    }
+    
+    config_path = f"{output_dir}/runtime_config.yaml"
+    os.makedirs(output_dir, exist_ok=True)
+    with open(config_path, "w") as f:
+        yaml.dump(runtime_config, f, default_flow_style=False)
+    
+    mlflow.log_artifact(config_path)
+    return config_path
