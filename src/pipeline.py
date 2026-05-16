@@ -52,6 +52,12 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             log_model_summary(model, tokenizer)
             log_memory_usage()
             
+            # Log git metadata and save config snapshot
+            from src.metrics.metrics import log_git_metadata, save_config_snapshot, log_environment_info
+            log_git_metadata()
+            log_environment_info()
+            save_config_snapshot(model_cfg, lora_cfg, train_cfg["training"], train_cfg["data"])
+            
             # Train
             logger.info("Starting training...")
             trainer = build_trainer(model, tokenizer, datasets, train_cfg["training"])

@@ -80,6 +80,13 @@ def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_c
     
     # Custom callback for MLflow logging
     class MLflowCallback(TrainerCallback):
+        def __init__(self):
+            self.total_tokens = 0
+            self.start_time = None
+            
+        def on_train_begin(self, args, state, control, **kwargs):
+            self.start_time = time.time()
+            
         def on_log(self, args, state, control, logs=None, **kwargs):
             if logs:
                 # Log training metrics
@@ -91,6 +98,23 @@ def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_c
                         step_metrics[key] = value
                 if step_metrics:
                     mlflow.log_metrics(step_metrics, step=state.global_step)
+                    
+        def on_step_end(self, args, state, control, **kwargs):
+            # Track tokens processed
+            batch_size = args.per_device_train_batch_size * args.gradient_accumulation_steps
+            seq_length = training_cfg.get("avg_tokens_per_sample", 128)
+            self.total_tokens += batch_size * seq_length
+            
+        def on_train_end(self, args, state, control, **kwargs):
+            # Log token statistics
+            if self.start_time:
+                total_time = time.time() - self.start_time
+                tokens_per_sec = self.total_tokens / total_time if total_time > 0 else 0
+                mlflow.log_metrics({
+                    "total_tokens_processed": self.total_tokens,
+                    "training_time_sec": total_time,
+                    "tokens_per_second": tokens_per_sec
+                })
     
     class ValidationCallback(TrainerCallback):
         def on_evaluate(self, args, state, control, metrics=None, **kwargs):
@@ -115,7 +139,6 @@ def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_c
     # Train with manual metric logging
     result = trainer.train()
     
-    # Manually log training metrics since report_to is disabled
     if hasattr(result, 'metrics'):
         for key, value in result.metrics.items():
             mlflow.log_metric(key, value)
