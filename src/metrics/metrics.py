@@ -3,6 +3,7 @@ import json
 import mlflow
 from typing import Dict, Any
 from src.utils.git_utils import get_git_metadata
+from src.utils.env_utils import get_environment_info
 
 def log_model_params(model_config: Dict[str, Any]):
     """Log model configuration parameters."""
@@ -94,13 +95,45 @@ def log_adapter_config(output_dir: str):
         mlflow.log_artifact(config_path)
 
 def log_git_metadata():
-    """Log git metadata to MLflow."""
+    """Log git metadata as artifact."""
     git_meta = get_git_metadata()
-    mlflow.log_params(git_meta)
+    
+    # Only log essential git params
+    mlflow.log_params({
+        "git_commit": git_meta["git_commit"],
+        "git_branch": git_meta["git_branch"],
+        "git_is_dirty": git_meta["git_is_dirty"]
+    })
+    
+    # Save full git info as artifact
+    git_path = "output/git_metadata.json"
+    os.makedirs("output", exist_ok=True)
+    with open(git_path, "w") as f:
+        json.dump(git_meta, f, indent=2)
+    mlflow.log_artifact(git_path)
+    
     if git_meta["git_is_dirty"]:
         from src.utils.logger import setup_logger
         logger = setup_logger(__name__)
-        logger.warning("Repository has uncommitted changes")
+        logger.warning(" Repository has uncommitted changes")
+
+def log_environment_info():
+    """Log environment info as artifact."""
+    env_info = get_environment_info()
+    
+    # Only log essential env params
+    mlflow.log_params({
+        "env_python": env_info.get("env_python", "unknown"),
+        "env_cuda": env_info.get("env_cuda", "N/A"),
+        "env_gpu_name": env_info.get("env_gpu_name", "N/A")
+    })
+    
+    # Save full environment info as artifact
+    env_path = "output/environment.json"
+    os.makedirs("output", exist_ok=True)
+    with open(env_path, "w") as f:
+        json.dump(env_info, f, indent=2)
+    mlflow.log_artifact(env_path)
 
 def save_config_snapshot(model_cfg, lora_cfg, training_cfg, data_cfg, output_dir="output"):
     """Save complete runtime configuration snapshot."""
@@ -110,6 +143,7 @@ def save_config_snapshot(model_cfg, lora_cfg, training_cfg, data_cfg, output_dir
     runtime_config = {
         "timestamp": datetime.now().isoformat(),
         "git": get_git_metadata(),
+        "environment": get_environment_info(),
         "model": model_cfg,
         "lora": lora_cfg,
         "training": training_cfg,

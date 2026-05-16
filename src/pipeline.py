@@ -53,8 +53,9 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             log_memory_usage()
             
             # Log git metadata and save config snapshot
-            from src.metrics.metrics import log_git_metadata, save_config_snapshot
+            from src.metrics.metrics import log_git_metadata, save_config_snapshot, log_environment_info
             log_git_metadata()
+            log_environment_info()
             save_config_snapshot(model_cfg, lora_cfg, train_cfg["training"], train_cfg["data"])
             
             # Train
