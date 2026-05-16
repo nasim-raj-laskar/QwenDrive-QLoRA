@@ -44,7 +44,7 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             # Load components
             logger.info("Loading components...")
             model, tokenizer = load_model(model_cfg, lora_cfg)
-            dataset = load_and_prepare(train_cfg["data"], tokenizer, save_sample_path="output/training_sample.jsonl")
+            datasets = load_and_prepare(train_cfg["data"], tokenizer, save_sample_path="output/training_sample.jsonl")
             
             # Log initial state
             logger.info("Logging initial state...")
@@ -54,8 +54,8 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             
             # Train
             logger.info("Starting training...")
-            trainer = build_trainer(model, tokenizer, dataset, train_cfg["training"])
-            train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"], gpu_profiler)
+            trainer = build_trainer(model, tokenizer, datasets, train_cfg["training"])
+            train_and_save(trainer, tokenizer, train_cfg["training"]["output_dir"], gpu_profiler, train_cfg["training"])
             
             # Stop GPU monitoring
             gpu_profiler.stop_monitoring()
@@ -65,9 +65,10 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             log_adapter_config(train_cfg["training"]["output_dir"])
             log_memory_usage()
             
-            # Run evaluation
-            logger.info("Starting post-training evaluation...")
-            eval_results = run_evaluation(model, tokenizer, eval_samples=100, gpu_profiler=gpu_profiler)
+            # Run evaluation on held-out test set
+            logger.info("Starting post-training evaluation on test set...")
+            eval_samples = train_cfg.get("eval_samples", 100)
+            eval_results = run_evaluation(model, tokenizer, eval_samples=eval_samples, gpu_profiler=gpu_profiler)
             
             logger.info("Evaluation Results:")
             for metric, value in eval_results.items():

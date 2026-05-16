@@ -511,13 +511,13 @@ Loading best model for final save...
 
 ## Implementation Checklist
 
-- [ ] Modify `src/data.py` to return train/val/test splits
-- [ ] Update `src/trainer.py` to accept validation dataset
-- [ ] Add evaluation_strategy and eval_steps to TrainingArguments
-- [ ] Configure checkpoint management (save_total_limit, load_best_model_at_end)
-- [ ] Update `configs/training.yaml` with validation params
-- [ ] Add validation callback for overfitting detection
-- [ ] Modify `src/pipeline.py` to use split datasets
-- [ ] Update evaluation to use held-out test set
-- [ ] Test with small sample to verify splits work correctly
-- [ ] Document validation loss trends in MLflow
+- ✅ Modify `src/data.py` to return train/val/test splits
+- ✅ Update `src/trainer.py` to accept validation dataset
+- ✅ Add evaluation_strategy and eval_steps to TrainingArguments
+- ✅ Configure checkpoint management (save_total_limit, load_best_model_at_end)
+- ✅ Update `configs/training.yaml` with validation params
+- ✅ Add validation callback for overfitting detection
+- ✅ Modify `src/pipeline.py` to use split datasets
+- ✅ Update evaluation to use held-out test set
+- ✅ Test with small sample to verify splits work correctly
+- ✅ Document validation loss trends in MLflow

@@ -1,23 +1,62 @@
 data:
   file: "data/automotive_en_dataset.jsonl"
-  sample_size: 10000
+  sample_size: 50  #10k
   shuffle_seed: 42
   system_prompt: "You are an automotive expert assistant."
   total_samples: 44773
+  min_seq_length: 10
+  max_seq_length: 256   ###512
+  
+  # Split configuration
+  splits:
+    train: 0.80  #0.90
+    validation: 0.10  #0.05
+    test: 0.10  #0.05
 
 training:
   output_dir: "./output/qwen3b-automotive"
   num_train_epochs: 1
-  per_device_train_batch_size: 4
-  gradient_accumulation_steps: 2
-  learning_rate: 0.00005
-  logging_steps: 10
-  save_strategy: "no"
+  per_device_train_batch_size: 2  #4
+  gradient_accumulation_steps: 1  #2
+  learning_rate: 0.0001  #0.00005
+  
+  # Validation configuration 
+  eval_strategy: "steps"
+  eval_steps: 5  ###100
+  per_device_eval_batch_size: 2
+  
+  # Checkpoint configuration
+  save_strategy: "steps"
+  save_steps: 5  ##100
+  save_total_limit: 2  ##3
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  
+  # Logging 
+  logging_steps: 1  #10
+  logging_strategy: "steps"
+  
+  # Optimizer
+  optim: "adamw_8bit"
+  lr_scheduler_type: "linear"  ##cosine
+  warmup_steps: 2  ##5
+  weight_decay: 0.01
+  
+  # Precision
   bf16: true
-  optim: "paged_adamw_8bit"
-  lr_scheduler_type: "cosine"
-  warmup_ratio: 0.03
-  max_seq_length: 512
+  
+  # Dataset processing
+  max_seq_length: 256   ###512
   packing: false
-  report_to: []
+  dataset_num_proc: 1 
+  seed: 3407
+  
+  # Development settings
+  overfitting_threshold: 2.0 
+  avg_tokens_per_sample: 128  
+  report_to: ["mlflow"]  
+  
+# Evaluation settings
+eval_samples: 20  
 
