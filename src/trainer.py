@@ -66,7 +66,7 @@ def build_trainer(model, tokenizer, datasets, training_cfg):
             # Output
             output_dir=training_cfg.get("output_dir", "./output"),
             seed=training_cfg.get("seed", 3407),
-            report_to=training_cfg.get("report_to", ["mlflow"]),
+            report_to=[],  
             dataloader_drop_last=True,
         ),
     )
@@ -91,15 +91,20 @@ def train_and_save(trainer, tokenizer, output_dir, gpu_profiler=None, training_c
                         avg_train_loss = sum(recent_train_loss) / len(recent_train_loss)
                         threshold = 2.0  # Default threshold
                         if metrics["eval_loss"] > avg_train_loss * threshold:
-                            logger.warning(f"⚠️ Potential overfitting detected: eval_loss ({metrics['eval_loss']:.4f}) >> train_loss ({avg_train_loss:.4f})")
+                            logger.warning(f" Potential overfitting detected: eval_loss ({metrics['eval_loss']:.4f}) >> train_loss ({avg_train_loss:.4f})")
     
     trainer.add_callback(ValidationCallback())
     
     # Record training start time for tokens/sec calculation
     start_time = time.time()
     
-    # Train with automatic metric logging
+    # Train with manual metric logging
     result = trainer.train()
+    
+    # Manually log training metrics since report_to is disabled
+    if hasattr(result, 'metrics'):
+        for key, value in result.metrics.items():
+            mlflow.log_metric(key, value)
     
     # Calculate training duration and tokens/sec
     end_time = time.time()

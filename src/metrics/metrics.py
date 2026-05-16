@@ -31,7 +31,7 @@ def log_lora_params(lora_config: Dict[str, Any]):
     })
 
 def log_training_params(training_args: Dict[str, Any]):
-    """Log training configuration parameters."""
+    """Log essential training configuration parameters only."""
     mlflow.log_params({
         "num_train_epochs": training_args.get("num_train_epochs"),
         "per_device_train_batch_size": training_args.get("per_device_train_batch_size"),
@@ -39,7 +39,11 @@ def log_training_params(training_args: Dict[str, Any]):
         "learning_rate": training_args.get("learning_rate"),
         "lr_scheduler_type": training_args.get("lr_scheduler_type"),
         "optim": training_args.get("optim"),
-        "max_seq_length": training_args.get("max_seq_length")
+        "max_seq_length": training_args.get("max_seq_length"),
+        "eval_strategy": training_args.get("eval_strategy"),
+        "eval_steps": training_args.get("eval_steps"),
+        "save_steps": training_args.get("save_steps"),
+        "warmup_steps": training_args.get("warmup_steps")
     })
 
 def log_dataset_params(dataset_info: Dict[str, Any]):
