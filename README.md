@@ -273,6 +273,14 @@ After training completes, `src/evaluation.py` automatically runs a suite of metr
    - Average and maximum GPU utilization
    - Token generation rate (tokens/sec) over time
 
+5. **LLM-as-a-Judge Evaluation** ✅ **NEW**: Uses Llama 3.3 70B via GROQ API to evaluate responses across multiple dimensions:
+   - **Helpfulness**: How useful is the response to the user?
+   - **Correctness**: Is the information factually accurate?
+   - **Coherence**: Is the response well-structured and clear?
+   - **Instruction Following**: Does it address all parts of the prompt?
+   - **Hallucination Risk**: Does it make unsupported claims? (lower is better)
+   - **Safety**: Is the advice safe and appropriate?
+
 All metrics are automatically logged to MLflow for experiment comparison and trend analysis.
 
 | Metric | Description |
@@ -282,6 +290,10 @@ All metrics are automatically logged to MLflow for experiment comparison and tre
 | Similarity | String similarity ratio via `SequenceMatcher` |
 | Avg latency (ms) | Mean generation time per prompt |
 | Token throughput | Generated tokens per second |
+| **LLM Judge Helpfulness** | **Llama 3.3 70B evaluation of response usefulness (1-10)** |
+| **LLM Judge Correctness** | **Llama 3.3 70B evaluation of factual accuracy (1-10)** |
+| **LLM Judge Coherence** | **Llama 3.3 70B evaluation of clarity and structure (1-10)** |
+| **LLM Judge Safety** | **Llama 3.3 70B evaluation of advice safety (1-10)** |
 
 Evaluation sample sizes and generation parameters are controlled via `configs/eval.yaml`.
 
@@ -386,7 +398,8 @@ DAGSHUB_REPO_NAME=<repo_name>
 │   ├── eval.yaml             # Evaluation sample sizes and generation params
 │   └── inference.yaml        # Inference generation parameters
 ├── data/                     # Training data
-│   └── automotive_en_dataset.jsonl  # 44K automotive Q&A pairs
+│   ├── automotive_en_dataset.jsonl  # 44K automotive Q&A pairs
+│   └── eval_prompts.jsonl    # Structured evaluation prompts by category
 ├── docs/                     # Documentation
 │   ├── README.md             # Documentation index
 │   ├── 01_evaluation_improvements.md
@@ -407,6 +420,8 @@ DAGSHUB_REPO_NAME=<repo_name>
 │   │   ├── metrics.py        # MLflow parameter/artifact logging helpers
 │   │   ├── eval_metrics.py   # Perplexity, BLEU, similarity implementations
 │   │   ├── eval_data.py      # Test data loader for evaluation
+│   │   ├── llm_judge.py      # LLM-as-a-Judge evaluation using GROQ API
+│   │   ├── category_eval.py  # Category-based evaluation with structured prompts
 │   │   └── gpu_profiler.py   # Background GPU monitoring (pynvml / nvidia-smi)
 │   └── utils/                # Utilities
 │       ├── logger.py         # Structured logger setup with timestamps
@@ -425,9 +440,10 @@ DAGSHUB_REPO_NAME=<repo_name>
 │   └── eval_results_*.txt    # Evaluation results with timestamps
 ├── models/                   # Model cache (created at runtime)
 │   └── hf_cache/             # HuggingFace model cache
-├── .env                      # Environment variables (MLflow, DagsHub, HF tokens)
+├── .env                      # Environment variables (MLflow, DagsHub, HF tokens, GROQ API)
 ├── .gitignore                # Git ignore patterns
 ├── requirements.txt          # Python dependencies
+├── test_llm_judge.py         # Test script for LLM-as-a-Judge functionality
 ├── test.py                   # Interactive streaming inference tester
 ├── train.py                  # Entry point (runs full training pipeline)
 └── README.md                 # This file
@@ -559,6 +575,7 @@ cp .env.example .env
 # - MLFLOW_TRACKING_URI (DagsHub MLflow URI)
 # - DAGSHUB_USERNAME, DAGSHUB_TOKEN
 # - HF_TOKEN (for model downloads and uploads)
+# - GROQ_API (for LLM-as-a-Judge evaluation)
 ```
 
 ### Training
@@ -580,6 +597,9 @@ python train.py
 ### Inference
 
 ```bash
+# Test LLM-as-a-Judge evaluation
+python test_llm_judge.py
+
 # Interactive testing
 python test.py
 
@@ -913,7 +933,7 @@ Comprehensive documentation for pipeline improvements is available in the `docs/
 
 Contributions are welcome! Areas for improvement:
 
-- **Evaluation**: Implement LLM-as-a-Judge or pairwise comparison
+- **Evaluation**: ✅ LLM-as-a-Judge implemented! Pairwise comparison still available for implementation
 - **Data Quality**: Add duplicate detection and quality scoring
 - **Validation**: ✅ Implemented train/val/test splits
 - **Monitoring**: Enhanced GPU profiling and token statistics

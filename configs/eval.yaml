@@ -16,3 +16,16 @@ evaluation:
   # Data parameters
   test_seed: 123
   data_file: "data/automotive_en_dataset.jsonl"
+  
+  # LLM-as-a-Judge evaluation
+  llm_judge:
+    enabled: true
+    samples: 12  # Use all samples from eval_prompts.jsonl
+    api_key_env: "GROQ_API"
+    dimensions:
+      - helpfulness
+      - correctness
+      - coherence
+      - instruction_following
+      - hallucination_risk
+      - safety

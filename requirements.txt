@@ -21,3 +21,4 @@ nltk
 pynvml
 unsloth
 xformers
+requests

@@ -9,6 +9,8 @@ import numpy as np
 from typing import Dict, List
 from src.metrics.eval_metrics import calculate_perplexity, calculate_bleu_approx, calculate_similarity
 from src.metrics.eval_data import load_test_data
+from src.metrics.llm_judge import LLMJudge
+from src.metrics.category_eval import CategoryEvaluator
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
@@ -32,6 +34,20 @@ class ModelEvaluator:
             clean_up_tokenization_spaces=False
         )
         
+        # Initialize LLM Judge if enabled
+        if self.config.get("llm_judge", {}).get("enabled"):
+            api_key = os.getenv(self.config["llm_judge"]["api_key_env"])
+            if api_key:
+                self.llm_judge = LLMJudge(api_key=api_key)
+            else:
+                warnings.warn("GROQ_API key not found, LLM judge evaluation disabled")
+                self.llm_judge = None
+        else:
+            self.llm_judge = None
+        
+        # Initialize Category Evaluator
+        self.category_eval = CategoryEvaluator(model, tokenizer)
+        
     def evaluate_model(self, eval_samples: int = 100) -> Dict[str, float]:
         """Run comprehensive evaluation."""
         print(f"Starting evaluation with {eval_samples} samples...")
@@ -42,6 +58,11 @@ class ModelEvaluator:
         results["perplexity"] = self._evaluate_perplexity(test_data)
         results.update(self._evaluate_generation_quality(test_data))
         results.update(self._evaluate_performance(test_data))
+        
+        # LLM-as-a-Judge evaluation
+        if self.llm_judge:
+            print("Running LLM-as-a-Judge evaluation...")
+            results.update(self._evaluate_with_judge())
         
         # Save results to file
         self._save_results_to_file(results, eval_samples)
@@ -126,6 +147,25 @@ class ModelEvaluator:
             "token_throughput": throughput
         }
     
+    def _evaluate_with_judge(self) -> Dict[str, float]:
+        """Evaluate using LLM-as-a-Judge on categorized prompts."""
+        judge_config = self.config.get("llm_judge", {})
+        max_samples = judge_config.get("samples", 12)
+        
+        # Get samples from category evaluator
+        samples = self.category_eval.get_category_samples_for_judge(max_samples=max_samples)
+        
+        if not samples:
+            warnings.warn("No samples available for LLM judge evaluation")
+            return {}
+        
+        print(f"Evaluating {len(samples)} samples with LLM judge...")
+        
+        # Evaluate with judge
+        judge_results = self.llm_judge.evaluate_batch(samples)
+        
+        return judge_results
+    
     def _save_results_to_file(self, results: Dict[str, float], eval_samples: int):
         """Save evaluation results to text file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -148,6 +188,17 @@ class ModelEvaluator:
             f.write(f"Similarity:           {results.get('similarity', 0):.1%}\n")
             f.write(f"Avg Latency:          {results.get('avg_latency_ms', 0):.0f} ms\n")
             f.write(f"Token Throughput:     {results.get('token_throughput', 0):.1f} tokens/sec\n")
+            
+            # Write LLM Judge metrics if available
+            judge_metrics = {k: v for k, v in results.items() if k.startswith('judge_')}
+            if judge_metrics:
+                f.write("\nLLM-AS-A-JUDGE METRICS:\n")
+                f.write(f"Helpfulness:          {judge_metrics.get('judge_helpfulness', 0):.1f}/10\n")
+                f.write(f"Correctness:          {judge_metrics.get('judge_correctness', 0):.1f}/10\n")
+                f.write(f"Coherence:            {judge_metrics.get('judge_coherence', 0):.1f}/10\n")
+                f.write(f"Instruction Following: {judge_metrics.get('judge_instruction_following', 0):.1f}/10\n")
+                f.write(f"Hallucination Risk:   {judge_metrics.get('judge_hallucination_risk', 0):.1f}/10 (lower=better)\n")
+                f.write(f"Safety:               {judge_metrics.get('judge_safety', 0):.1f}/10\n")
             
             # Write GPU metrics if available
             if gpu_metrics:
