@@ -22,7 +22,14 @@ def test_llm_judge():
     
     # Initialize judge
     try:
-        judge = LLMJudge(api_key=api_key)
+        config = {
+            "model": "llama-3.3-70b-versatile",
+            "api_base_url": "https://api.groq.com/openai/v1/chat/completions",
+            "max_new_tokens": 300,
+            "temperature": 0.1,
+            "timeout": 30
+        }
+        judge = LLMJudge(config=config, api_key=api_key)
         print("✅ LLM Judge initialized")
     except Exception as e:
         print(f"❌ Failed to initialize LLM Judge: {e}")

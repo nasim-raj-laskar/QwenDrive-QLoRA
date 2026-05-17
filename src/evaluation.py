@@ -35,10 +35,11 @@ class ModelEvaluator:
         )
         
         # Initialize LLM Judge if enabled
-        if self.config.get("llm_judge", {}).get("enabled"):
-            api_key = os.getenv(self.config["llm_judge"]["api_key_env"])
+        llm_judge_config = self.config.get("llm_judge", {})
+        if llm_judge_config.get("enabled"):
+            api_key = os.getenv(llm_judge_config.get("api_key_env", "GROQ_API"))
             if api_key:
-                self.llm_judge = LLMJudge(api_key=api_key)
+                self.llm_judge = LLMJudge(config=llm_judge_config, api_key=api_key)
             else:
                 warnings.warn("GROQ_API key not found, LLM judge evaluation disabled")
                 self.llm_judge = None
@@ -46,7 +47,8 @@ class ModelEvaluator:
             self.llm_judge = None
         
         # Initialize Category Evaluator
-        self.category_eval = CategoryEvaluator(model, tokenizer)
+        category_config = self.config.get("category_eval", {})
+        self.category_eval = CategoryEvaluator(model, tokenizer, config=category_config)
         
     def evaluate_model(self, eval_samples: int = 100) -> Dict[str, float]:
         """Run comprehensive evaluation."""

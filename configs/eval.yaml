@@ -20,8 +20,13 @@ evaluation:
   # LLM-as-a-Judge evaluation
   llm_judge:
     enabled: true
-    samples: 12  # Use all samples from eval_prompts.jsonl
+    model: "llama-3.3-70b-versatile"
+    api_base_url: "https://api.groq.com/openai/v1/chat/completions"
     api_key_env: "GROQ_API"
+    samples: 12
+    max_new_tokens: 300
+    temperature: 0.1
+    timeout: 30
     dimensions:
       - helpfulness
       - correctness
@@ -29,3 +34,9 @@ evaluation:
       - instruction_following
       - hallucination_risk
       - safety
+  
+  # Category evaluation
+  category_eval:
+    enabled: true
+    prompts_file: "data/eval_prompts.jsonl"
+    max_new_tokens: 100

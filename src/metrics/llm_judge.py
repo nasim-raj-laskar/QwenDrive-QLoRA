@@ -9,10 +9,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class LLMJudge:
-    def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv("GROQ_API")
-        self.base_url = "https://api.groq.com/openai/v1/chat/completions"
-        self.model = "llama-3.3-70b-versatile"  # Updated to largest available model
+    def __init__(self, config: Dict = None, api_key: str = None):
+        self.config = config or {}
+        self.api_key = api_key or os.getenv(self.config.get("api_key_env", "GROQ_API"))
+        self.base_url = self.config.get("api_base_url", "https://api.groq.com/openai/v1/chat/completions")
+        self.model = self.config.get("model", "llama-3.3-70b-versatile")
+        self.max_tokens = self.config.get("max_new_tokens", 300)
+        self.temperature = self.config.get("temperature", 0.1)
+        self.timeout = self.config.get("timeout", 30)
         
     def evaluate_response(self, prompt: str, response: str, reference: str = None) -> Dict[str, float]:
         """Evaluate a single response using LLM-as-a-Judge."""
@@ -90,12 +94,12 @@ Respond in JSON format:
                 {"role": "system", "content": "You are a helpful assistant that evaluates AI responses. Always respond with valid JSON."},
                 {"role": "user", "content": judge_prompt}
             ],
-            "temperature": 0.1,
-            "max_tokens": 300,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
             "response_format": {"type": "json_object"}
         }
         
-        response = requests.post(self.base_url, headers=headers, json=payload, timeout=30)
+        response = requests.post(self.base_url, headers=headers, json=payload, timeout=self.timeout)
         
         if response.status_code != 200:
             print(f"API Error {response.status_code}: {response.text}")

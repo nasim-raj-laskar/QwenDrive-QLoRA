@@ -4,10 +4,12 @@ from typing import Dict, List
 from transformers import pipeline
 
 class CategoryEvaluator:
-    def __init__(self, model, tokenizer, categories_file: str = "data/eval_prompts.jsonl"):
+    def __init__(self, model, tokenizer, config: Dict = None):
         self.model = model
         self.tokenizer = tokenizer
-        self.categories_file = categories_file
+        self.config = config or {}
+        self.categories_file = self.config.get("prompts_file", "data/eval_prompts.jsonl")
+        self.max_new_tokens = self.config.get("max_new_tokens", 100)
         self.prompts = self._load_categorized_prompts()
         self.pipe = pipeline(
             "text-generation", 
@@ -36,18 +38,18 @@ class CategoryEvaluator:
         
         return prompts_by_category
     
-    def evaluate_by_category(self, max_new_tokens: int = 100) -> Dict[str, Dict]:
+    def evaluate_by_category(self) -> Dict[str, Dict]:
         """Evaluate model performance by category."""
         results = {}
         
         for category, prompts in self.prompts.items():
             print(f"Evaluating category: {category}")
-            category_results = self._evaluate_category(category, prompts, max_new_tokens)
+            category_results = self._evaluate_category(category, prompts)
             results[category] = category_results
         
         return results
     
-    def _evaluate_category(self, category: str, prompts: List[Dict], max_new_tokens: int) -> Dict:
+    def _evaluate_category(self, category: str, prompts: List[Dict]) -> Dict:
         """Evaluate a specific category of prompts."""
         generated_responses = []
         
@@ -60,7 +62,7 @@ class CategoryEvaluator:
                 warnings.simplefilter("ignore")
                 result = self.pipe(
                     formatted_prompt,
-                    max_new_tokens=max_new_tokens,
+                    max_new_tokens=self.max_new_tokens,
                     max_length=None,
                     do_sample=False,
                     return_full_text=False,
@@ -99,7 +101,7 @@ class CategoryEvaluator:
                     warnings.simplefilter("ignore")
                     result = self.pipe(
                         formatted_prompt,
-                        max_new_tokens=100,
+                        max_new_tokens=self.max_new_tokens,
                         max_length=None,
                         do_sample=False,
                         return_full_text=False,
@@ -132,7 +134,7 @@ class CategoryEvaluator:
                         warnings.simplefilter("ignore")
                         result = self.pipe(
                             formatted_prompt,
-                            max_new_tokens=100,
+                            max_new_tokens=self.max_new_tokens,
                             max_length=None,
                             do_sample=False,
                             return_full_text=False,
