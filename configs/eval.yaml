@@ -23,7 +23,7 @@ evaluation:
     model: "llama-3.3-70b-versatile"
     api_base_url: "https://api.groq.com/openai/v1/chat/completions"
     api_key_env: "GROQ_API"
-    prompts_dir: "prompts"
+    prompts_dir: "src/prompts"
     samples: 12
     max_new_tokens: 300
     temperature: 0.1
@@ -39,7 +39,7 @@ evaluation:
   # Category evaluation
   category_eval:
     enabled: true
-    prompts_file: "prompts/eval_prompts.jsonl"
+    prompts_file: "src/prompts/eval_prompts.jsonl"
     max_new_tokens: 100
   
   # Pairwise comparison evaluation

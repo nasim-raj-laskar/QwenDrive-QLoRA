@@ -54,7 +54,7 @@ def test_pairwise():
     
     # Load test prompts from eval prompts file
     import json
-    prompts_file = eval_cfg.get("category_eval", {}).get("prompts_file", "prompts/eval_prompts.jsonl")
+    prompts_file = eval_cfg.get("category_eval", {}).get("prompts_file", "src/prompts/eval_prompts.jsonl")
     prompts = []
     
     try:

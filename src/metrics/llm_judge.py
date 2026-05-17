@@ -17,7 +17,7 @@ class LLMJudge:
         self.max_tokens = self.config.get("max_new_tokens", 300)
         self.temperature = self.config.get("temperature", 0.1)
         self.timeout = self.config.get("timeout", 30)
-        self.prompts_dir = self.config.get("prompts_dir", "prompts")
+        self.prompts_dir = self.config.get("prompts_dir", "src/prompts")
         
         # Load prompt templates
         self.system_prompt = self._load_prompt("judge_system.txt")
