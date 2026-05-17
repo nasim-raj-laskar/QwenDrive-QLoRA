@@ -100,6 +100,10 @@ class LLMJudge:
         # Parse JSON response
         try:
             scores = json.loads(content)
+            # Handle case where API returns a list instead of dict
+            if isinstance(scores, list):
+                print(f"API returned list: {scores}")
+                return self._default_scores()
             return {k: float(v) for k, v in scores.items() if k != "reasoning" and isinstance(v, (int, float))}
         except json.JSONDecodeError:
             # Fallback parsing if JSON is malformed

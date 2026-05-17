@@ -41,3 +41,9 @@ evaluation:
     enabled: true
     prompts_file: "data/eval_prompts.jsonl"
     max_new_tokens: 100
+  
+  # Pairwise comparison evaluation
+  pairwise_eval:
+    enabled: true  # Enable for testing
+    samples: 5
+    max_new_tokens: 50

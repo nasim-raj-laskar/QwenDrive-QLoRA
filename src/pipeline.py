@@ -74,7 +74,20 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             # Run evaluation on held-out test set
             logger.info("Starting post-training evaluation on test set...")
             eval_samples = train_cfg.get("eval_samples", 100)
-            eval_results = run_evaluation(model, tokenizer, eval_samples=eval_samples, gpu_profiler=gpu_profiler)
+            
+            # Load base model for pairwise comparison if enabled
+            base_model = None
+            if train_cfg.get("pairwise_eval", {}).get("enabled"):
+                logger.info("Loading base model for pairwise comparison...")
+                from unsloth import FastLanguageModel
+                base_model, _ = FastLanguageModel.from_pretrained(
+                    model_name=model_cfg["name"],
+                    max_seq_length=model_cfg["max_seq_length"],
+                    dtype=None,
+                    load_in_4bit=True,
+                )
+            
+            eval_results = run_evaluation(model, tokenizer, eval_samples=eval_samples, base_model=base_model, gpu_profiler=gpu_profiler)
             
             logger.info("Evaluation Results:")
             for metric, value in eval_results.items():

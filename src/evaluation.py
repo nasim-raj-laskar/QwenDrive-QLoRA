@@ -11,6 +11,7 @@ from src.metrics.eval_metrics import calculate_perplexity, calculate_bleu_approx
 from src.metrics.eval_data import load_test_data
 from src.metrics.llm_judge import LLMJudge
 from src.metrics.category_eval import CategoryEvaluator
+from src.metrics.pairwise_eval import PairwiseEvaluator
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
@@ -22,9 +23,10 @@ def load_eval_config():
         return yaml.safe_load(f)["evaluation"]
 
 class ModelEvaluator:
-    def __init__(self, model, tokenizer, gpu_profiler=None):
+    def __init__(self, model, tokenizer, base_model=None, gpu_profiler=None):
         self.model = model
         self.tokenizer = tokenizer
+        self.base_model = base_model  # For pairwise comparison
         self.gpu_profiler = gpu_profiler
         self.config = load_eval_config()
         self.pipe = pipeline(
@@ -50,6 +52,18 @@ class ModelEvaluator:
         category_config = self.config.get("category_eval", {})
         self.category_eval = CategoryEvaluator(model, tokenizer, config=category_config)
         
+        # Initialize Pairwise Evaluator if base model provided
+        pairwise_config = self.config.get("pairwise_eval", {})
+        if pairwise_config.get("enabled") and self.base_model:
+            self.pairwise_eval = PairwiseEvaluator(
+                base_model=self.base_model,
+                finetuned_model=self.model,
+                tokenizer=self.tokenizer,
+                llm_judge=self.llm_judge
+            )
+        else:
+            self.pairwise_eval = None
+        
     def evaluate_model(self, eval_samples: int = 100) -> Dict[str, float]:
         """Run comprehensive evaluation."""
         print(f"Starting evaluation with {eval_samples} samples...")
@@ -65,6 +79,11 @@ class ModelEvaluator:
         if self.llm_judge:
             print("Running LLM-as-a-Judge evaluation...")
             results.update(self._evaluate_with_judge())
+        
+        # Pairwise comparison evaluation
+        if self.pairwise_eval:
+            print("Running pairwise comparison evaluation...")
+            results.update(self._evaluate_pairwise())
         
         # Save results to file
         self._save_results_to_file(results, eval_samples)
@@ -168,6 +187,33 @@ class ModelEvaluator:
         
         return judge_results
     
+    def _evaluate_pairwise(self) -> Dict[str, float]:
+        """Evaluate using pairwise comparison between base and fine-tuned models."""
+        pairwise_config = self.config.get("pairwise_eval", {})
+        max_samples = pairwise_config.get("samples", 10)
+        max_new_tokens = pairwise_config.get("max_new_tokens", 100)
+        
+        # Get test prompts
+        test_prompts = []
+        for category, prompts in self.category_eval.prompts.items():
+            for prompt_item in prompts[:max_samples // len(self.category_eval.prompts)]:
+                test_prompts.append(prompt_item["input"])
+                if len(test_prompts) >= max_samples:
+                    break
+            if len(test_prompts) >= max_samples:
+                break
+        
+        if not test_prompts:
+            warnings.warn("No test prompts available for pairwise evaluation")
+            return {}
+        
+        print(f"Comparing {len(test_prompts)} prompts between base and fine-tuned models...")
+        
+        # Run pairwise comparison
+        pairwise_results = self.pairwise_eval.compare_responses(test_prompts, max_new_tokens)
+        
+        return pairwise_results
+    
     def _save_results_to_file(self, results: Dict[str, float], eval_samples: int):
         """Save evaluation results to text file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -202,6 +248,15 @@ class ModelEvaluator:
                 f.write(f"Hallucination Risk:   {judge_metrics.get('judge_hallucination_risk', 0):.1f}/10 (lower=better)\n")
                 f.write(f"Safety:               {judge_metrics.get('judge_safety', 0):.1f}/10\n")
             
+            # Write Pairwise metrics if available
+            pairwise_metrics = {k: v for k, v in results.items() if k.startswith('pairwise_')}
+            if pairwise_metrics:
+                f.write("\nPAIRWISE COMPARISON:\n")
+                f.write(f"Fine-tuned Win Rate:  {pairwise_metrics.get('pairwise_ft_win_rate', 0):.1%}\n")
+                f.write(f"Base Model Win Rate:  {pairwise_metrics.get('pairwise_base_win_rate', 0):.1%}\n")
+                f.write(f"Tie Rate:             {pairwise_metrics.get('pairwise_tie_rate', 0):.1%}\n")
+                f.write(f"Total Comparisons:    {pairwise_metrics.get('pairwise_total_comparisons', 0):.0f}\n")
+            
             # Write GPU metrics if available
             if gpu_metrics:
                 f.write("\nGPU METRICS:\n")
@@ -214,7 +269,7 @@ class ModelEvaluator:
         # Log as MLflow artifact
         mlflow.log_artifact(filename)
 
-def run_evaluation(model, tokenizer, eval_samples: int = 100, gpu_profiler=None) -> Dict[str, float]:
+def run_evaluation(model, tokenizer, eval_samples: int = 100, base_model=None, gpu_profiler=None) -> Dict[str, float]:
     """Run model evaluation and return results."""
-    evaluator = ModelEvaluator(model, tokenizer, gpu_profiler)
+    evaluator = ModelEvaluator(model, tokenizer, base_model, gpu_profiler)
     return evaluator.evaluate_model(eval_samples)
