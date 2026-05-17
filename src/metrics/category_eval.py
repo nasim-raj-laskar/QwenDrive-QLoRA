@@ -8,7 +8,7 @@ class CategoryEvaluator:
         self.model = model
         self.tokenizer = tokenizer
         self.config = config or {}
-        self.categories_file = self.config.get("prompts_file", "data/eval_prompts.jsonl")
+        self.categories_file = self.config.get("prompts_file", "prompts/eval_prompts.jsonl")
         self.max_new_tokens = self.config.get("max_new_tokens", 100)
         self.prompts = self._load_categorized_prompts()
         self.pipe = pipeline(

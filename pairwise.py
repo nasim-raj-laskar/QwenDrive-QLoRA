@@ -52,12 +52,25 @@ def test_pairwise():
     pairwise_config = eval_cfg.get("pairwise_eval", {})
     max_tokens = pairwise_config.get("max_new_tokens", 50)
     
-    # Test prompts from config or default
-    prompts = [
-        "What causes engine overheating?",
-        "How do I check my brake pads?",
-        "My car won't start. What should I check?"
-    ]
+    # Load test prompts from eval prompts file
+    import json
+    prompts_file = eval_cfg.get("category_eval", {}).get("prompts_file", "prompts/eval_prompts.jsonl")
+    prompts = []
+    
+    try:
+        with open(prompts_file, 'r') as f:
+            for line in f:
+                item = json.loads(line.strip())
+                prompts.append(item.get("input", ""))
+                if len(prompts) >= 3:  # Limit to 3 for testing
+                    break
+    except FileNotFoundError:
+        # Fallback to default prompts if file not found
+        prompts = [
+            "What causes engine overheating?",
+            "How do I check my brake pads?",
+            "My car won't start. What should I check?"
+        ]
     
     print("Running pairwise comparison...")
     

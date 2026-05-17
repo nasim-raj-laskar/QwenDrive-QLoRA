@@ -39,7 +39,7 @@ evaluation:
   # Category evaluation
   category_eval:
     enabled: true
-    prompts_file: "data/eval_prompts.jsonl"
+    prompts_file: "prompts/eval_prompts.jsonl"
     max_new_tokens: 100
   
   # Pairwise comparison evaluation
