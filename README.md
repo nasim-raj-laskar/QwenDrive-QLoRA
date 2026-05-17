@@ -400,6 +400,10 @@ DAGSHUB_REPO_NAME=<repo_name>
 ├── data/                     # Training data
 │   ├── automotive_en_dataset.jsonl  # 44K automotive Q&A pairs
 │   └── eval_prompts.jsonl    # Structured evaluation prompts by category
+├── prompts/                  # Prompt templates
+│   ├── judge_system.txt      # LLM judge system prompt
+│   ├── judge_template.txt    # LLM judge evaluation template
+│   └── reference_section.txt # Reference answer template
 ├── docs/                     # Documentation
 │   ├── README.md             # Documentation index
 │   ├── 01_evaluation_improvements.md
