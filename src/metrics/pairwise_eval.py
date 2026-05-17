@@ -10,6 +10,9 @@ class PairwiseEvaluator:
         self.tokenizer = tokenizer
         self.llm_judge = llm_judge
         
+        # Load pairwise prompt template
+        self.pairwise_template = self._load_prompt_template("src/prompts/pairwise_template.txt")
+        
         # Create pipelines for both models
         self.base_pipe = pipeline(
             "text-generation", 
@@ -24,6 +27,15 @@ class PairwiseEvaluator:
             tokenizer=tokenizer,
             clean_up_tokenization_spaces=False
         )
+    
+    def _load_prompt_template(self, filepath: str) -> str:
+        """Load prompt template from file."""
+        try:
+            with open(filepath, 'r') as f:
+                return f.read().strip()
+        except FileNotFoundError:
+            warnings.warn(f"Prompt template {filepath} not found, using fallback")
+            return "Compare responses A and B. Return JSON with winner: A|B|tie"
     
     def compare_responses(self, prompts: List[str], max_new_tokens: int = 100) -> Dict[str, float]:
         """Compare base model vs fine-tuned model responses."""
@@ -72,29 +84,11 @@ class PairwiseEvaluator:
     
     def _llm_judge_winner(self, prompt: str, base_response: str, ft_response: str) -> str:
         """Use LLM judge to determine winner."""
-        judge_prompt = f"""Compare these two responses to the same automotive question.
-
-QUESTION:
-{prompt}
-
-RESPONSE A:
-{base_response}
-
-RESPONSE B:
-{ft_response}
-
-Which response is better? Consider:
-- Accuracy and correctness
-- Helpfulness and completeness
-- Clarity and coherence
-- Safety and appropriateness
-
-Respond with JSON:
-{{
-  "winner": "A" | "B" | "tie",
-  "confidence": <1-10>,
-  "reasoning": "<explanation>"
-}}"""
+        judge_prompt = self.pairwise_template.format(
+            prompt=prompt,
+            base_response=base_response,
+            ft_response=ft_response
+        )
         
         try:
             # Call the judge API directly
