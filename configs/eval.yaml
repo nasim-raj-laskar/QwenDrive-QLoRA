@@ -16,3 +16,34 @@ evaluation:
   # Data parameters
   test_seed: 123
   data_file: "data/automotive_en_dataset.jsonl"
+  
+  # LLM-as-a-Judge evaluation
+  llm_judge:
+    enabled: true
+    model: "llama-3.3-70b-versatile"
+    api_base_url: "https://api.groq.com/openai/v1/chat/completions"
+    api_key_env: "GROQ_API"
+    prompts_dir: "src/prompts"
+    samples: 12
+    max_new_tokens: 300
+    temperature: 0.1
+    timeout: 30
+    dimensions:
+      - helpfulness
+      - correctness
+      - coherence
+      - instruction_following
+      - hallucination_risk
+      - safety
+  
+  # Category evaluation
+  category_eval:
+    enabled: true
+    prompts_file: "src/prompts/eval_prompts.jsonl"
+    max_new_tokens: 100
+  
+  # Pairwise comparison evaluation
+  pairwise_eval:
+    enabled: true  # Enable for testing
+    samples: 5
+    max_new_tokens: 50

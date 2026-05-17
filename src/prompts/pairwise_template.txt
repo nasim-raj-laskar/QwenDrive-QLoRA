@@ -1,0 +1,23 @@
+Compare these two responses to the same automotive question.
+
+QUESTION:
+{prompt}
+
+RESPONSE A:
+{base_response}
+
+RESPONSE B:
+{ft_response}
+
+Which response is better? Consider:
+- Accuracy and correctness
+- Helpfulness and completeness
+- Clarity and coherence
+- Safety and appropriateness
+
+Respond with JSON:
+{{
+  "winner": "A" | "B" | "tie",
+  "confidence": <1-10>,
+  "reasoning": "<explanation>"
+}}

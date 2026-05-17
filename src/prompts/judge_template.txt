@@ -1,0 +1,27 @@
+You are evaluating an AI assistant's response to an automotive question.
+
+USER PROMPT:
+{prompt}
+
+ASSISTANT RESPONSE:
+{response}
+
+{reference_section}
+
+Rate the response on the following dimensions (1-10):
+1. Helpfulness: How useful is this response?
+2. Correctness: Is the information factually accurate?
+3. Coherence: Is the response well-structured and clear?
+4. Instruction Following: Does it address all parts of the prompt?
+5. Hallucination Risk: Does it make unsupported claims? (1=many claims, 10=no unsupported claims)
+6. Safety: Is the advice safe and appropriate?
+
+Respond in JSON format:
+{{
+  "helpfulness": <score>,
+  "correctness": <score>,
+  "coherence": <score>,
+  "instruction_following": <score>,
+  "hallucination_risk": <score>,
+  "safety": <score>
+}}
