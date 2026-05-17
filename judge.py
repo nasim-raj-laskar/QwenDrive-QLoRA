@@ -5,6 +5,7 @@ Test script for LLM-as-a-Judge evaluation
 
 import os
 import sys
+import yaml
 sys.path.append('.')
 
 from src.metrics.llm_judge import LLMJudge
@@ -12,33 +13,47 @@ from src.metrics.llm_judge import LLMJudge
 def test_llm_judge():
     """Test the LLM judge with a sample automotive question."""
     
-    # Check if GROQ API key is available
-    api_key = os.getenv("GROQ_API")
+    # Load config from eval.yaml
+    with open('configs/eval.yaml') as f:
+        eval_cfg = yaml.safe_load(f)['evaluation']
+    
+    llm_judge_config = eval_cfg.get("llm_judge", {})
+    
+    # Check if LLM judge is enabled
+    if not llm_judge_config.get("enabled"):
+        print("ERROR: LLM Judge is disabled in config")
+        return False
+    
+    # Check if API key is available
+    api_key_env = llm_judge_config.get("api_key_env", "GROQ_API")
+    api_key = os.getenv(api_key_env)
     if not api_key:
-        print("❌ GROQ_API environment variable not found")
+        print(f"ERROR: {api_key_env} environment variable not found")
         return False
     
-    print("✅ GROQ_API key found")
+    print(f"SUCCESS: {api_key_env} key found")
     
-    # Initialize judge
+    # Initialize judge using config
     try:
-        config = {
-            "model": "llama-3.3-70b-versatile",
-            "api_base_url": "https://api.groq.com/openai/v1/chat/completions",
-            "max_new_tokens": 300,
-            "temperature": 0.1,
-            "timeout": 30
-        }
-        judge = LLMJudge(config=config, api_key=api_key)
-        print("✅ LLM Judge initialized")
+        judge = LLMJudge(config=llm_judge_config, api_key=api_key)
+        print("SUCCESS: LLM Judge initialized")
     except Exception as e:
-        print(f"❌ Failed to initialize LLM Judge: {e}")
+        print(f"ERROR: Failed to initialize LLM Judge: {e}")
         return False
     
-    # Test sample
-    prompt = "What causes engine overheating?"
-    response = "Engine overheating can be caused by low coolant levels, a faulty thermostat, a broken water pump, or a clogged radiator."
-    reference = "Common causes include low coolant, faulty thermostat, water pump failure, or radiator blockage."
+    # Load test sample from file
+    import json
+    try:
+        with open('src/prompts/test_sample.jsonl', 'r') as f:
+            test_sample = json.loads(f.read().strip())
+        prompt = test_sample["input"]
+        response = test_sample["generated"]
+        reference = test_sample["target"]
+    except FileNotFoundError:
+        # Fallback to default if file not found
+        prompt = "What causes engine overheating?"
+        response = "Engine overheating can be caused by low coolant levels, a faulty thermostat, a broken water pump, or a clogged radiator."
+        reference = "Common causes include low coolant, faulty thermostat, water pump failure, or radiator blockage."
     
     print(f"\nTesting with:")
     print(f"Prompt: {prompt}")
@@ -47,13 +62,13 @@ def test_llm_judge():
     # Evaluate
     try:
         scores = judge.evaluate_response(prompt, response, reference)
-        print("\n✅ LLM Judge evaluation successful!")
+        print("\nSUCCESS: LLM Judge evaluation successful!")
         print("Scores:")
         for dimension, score in scores.items():
             print(f"  {dimension}: {score:.1f}/10")
         return True
     except Exception as e:
-        print(f"❌ LLM Judge evaluation failed: {e}")
+        print(f"ERROR: LLM Judge evaluation failed: {e}")
         return False
 
 if __name__ == "__main__":
@@ -61,6 +76,6 @@ if __name__ == "__main__":
     success = test_llm_judge()
     
     if success:
-        print("\n🎉 All tests passed! LLM Judge is ready to use.")
+        print("\nAll tests passed! LLM Judge is ready to use.")
     else:
-        print("\n💥 Tests failed. Check your GROQ_API key and internet connection.")
+        print("\nTests failed. Check your API key and internet connection.")
