@@ -85,7 +85,7 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             
             # Log analysis artifacts
             mlflow.log_artifacts("output/data_analysis")
-            mlflow.log_artifacts("data/versions")
+            mlflow.log_artifact(f"data/versions/version_{version_id}.json")
             
             # Log git metadata and save config snapshot
             from src.metrics.metrics import log_git_metadata, save_config_snapshot, log_environment_info

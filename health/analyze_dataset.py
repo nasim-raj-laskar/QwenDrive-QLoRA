@@ -26,7 +26,7 @@ def main():
     with open("configs/training.yaml", "r") as f:
         train_cfg = yaml.safe_load(f)
     
-    # Load tokenizer only (no model needed for analysis)
+    # Load tokenizer only
     logger.info("Loading tokenizer...")
     tokenizer = load_tokenizer(model_cfg["model_name"], model_cfg["trust_remote_code"])
     

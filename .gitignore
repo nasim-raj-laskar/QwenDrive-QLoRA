@@ -10,3 +10,4 @@ models/
 unsloth_compiled_cache/
 output/
 logs/
+data/versions
