@@ -3,6 +3,9 @@
 Duplicate detection utility for the automotive dataset.
 """
 
+import sys
+sys.path.append('.')
+
 import yaml
 from src.data_analysis import detect_exact_duplicates
 from src.data import load_and_prepare

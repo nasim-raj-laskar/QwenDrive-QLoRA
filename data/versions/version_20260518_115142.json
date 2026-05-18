@@ -1,0 +1,34 @@
+{
+  "version_id": "20260518_115142",
+  "timestamp": "2026-05-18T11:51:42.773811",
+  "dataset_hash": "7b8c7c5d7a59724c",
+  "total_samples": 40,
+  "config": {
+    "file": "data/automotive_en_dataset.jsonl",
+    "sample_size": 50,
+    "shuffle_seed": 42,
+    "system_prompt": "You are an automotive expert assistant.",
+    "total_samples": 44773,
+    "min_seq_length": 10,
+    "max_seq_length": 256,
+    "splits": {
+      "train": 0.8,
+      "validation": 0.1,
+      "test": 0.1
+    }
+  },
+  "preprocessing_steps": [
+    "load_jsonl",
+    "shuffle_seed_42",
+    "sample_50",
+    "format_chat_template",
+    "filter_length_10_256"
+  ],
+  "source_file": "data/automotive_en_dataset.jsonl",
+  "sample_size": 50,
+  "shuffle_seed": 42,
+  "filters": {
+    "min_tokens": 10,
+    "max_tokens": 256
+  }
+}

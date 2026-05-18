@@ -4,6 +4,9 @@ Standalone dataset analysis script.
 Run comprehensive analysis on the automotive dataset without training.
 """
 
+import sys
+sys.path.append('.')
+
 import yaml
 from src.data_analysis import DatasetAnalyzer, DatasetVersioner, detect_exact_duplicates
 from src.model import load_tokenizer
