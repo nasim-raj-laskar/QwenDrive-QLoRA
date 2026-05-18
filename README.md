@@ -69,6 +69,7 @@ Fine-tunes `Qwen/Qwen2.5-3B-Instruct` on an automotive Q&A dataset using **QLoRA
 - **Comprehensive Tracking**: MLflow integration logs parameters, metrics, and artifacts for full experiment reproducibility ✅
 - **Automated Evaluation**: Post-training evaluation suite measures perplexity, generation quality, and inference performance
 - **Validation Pipeline**: Train/validation/test splits with overfitting detection and best checkpoint selection ✅
+- **Dataset Engineering**: ✅ **NEW** - Comprehensive data quality analysis, duplicate detection, and versioning
 - **Production-Ready**: Includes inference pipeline, model export utilities, and system monitoring scripts
 
 ---
@@ -198,6 +199,7 @@ LoRA is injected into all seven projection layers across every transformer block
 - **Anomaly Detection**: Empty responses, malformed structure, repetitive content
 - **Version Control**: SHA-256 hashing and metadata tracking for reproducibility
 - **Quality Filtering**: Optional removal of low-quality samples (configurable)
+- **MLflow Integration**: All quality metrics logged for experiment comparison
 
 The system prompt (`You are an automotive expert assistant.`) is prepended to every conversation, establishing the model's role and domain expertise. This prompt engineering ensures consistent behavior across all fine-tuned responses.
 
@@ -425,6 +427,14 @@ DAGSHUB_REPO_NAME=<repo_name>
 ├── notebook/                 # Jupyter notebooks
 │   └── training-notebook.ipynb  # Interactive training notebook
 ├── src/                      # Source code
+│   ├── analysis/             # ✅ NEW: Dataset quality analysis
+│   │   ├── __init__.py       # Package exports
+│   │   ├── analyzer.py       # Main DatasetAnalyzer orchestrator
+│   │   ├── statistics.py     # Token & length statistics
+│   │   ├── quality.py        # Quality checks & scoring
+│   │   ├── duplicates.py     # Duplicate detection
+│   │   ├── versioning.py     # Dataset versioning
+│   │   └── reporter.py       # Report generation
 │   ├── data.py               # Dataset loading, chat template formatting, length filtering
 │   ├── model.py              # Unsloth model + tokenizer loading, LoRA injection
 │   ├── trainer.py            # SFTTrainer construction and training loop
@@ -450,11 +460,21 @@ DAGSHUB_REPO_NAME=<repo_name>
 │   ├── cleanup_all.sh        # Full cleanup (models + output + cache)
 │   ├── hf_modelpush.sh       # Push adapter or merged model to HuggingFace Hub
 │   └── status.sh             # Full project status summary
+├── health/                   # ✅ NEW: Health check utilities
+│   ├── analyze_dataset.py    # Standalone dataset analysis
+│   ├── detect_duplicates.py  # Duplicate detection utility
+│   ├── judge.py              # LLM-as-a-Judge testing
+│   └── pairwise.py           # Pairwise model comparison
 ├── output/                   # Training outputs (created at runtime)
 │   ├── qwen3b-automotive/    # Saved adapter weights
+│   ├── data_analysis/        # ✅ NEW: Dataset analysis reports
 │   └── eval_results_*.txt    # Evaluation results with timestamps
 ├── models/                   # Model cache (created at runtime)
 │   └── hf_cache/             # HuggingFace model cache
+├── data/                     # Training data
+│   ├── automotive_en_dataset.jsonl  # 44K automotive Q&A pairs
+│   ├── eval_prompts.jsonl    # Structured evaluation prompts by category
+│   └── versions/             # ✅ NEW: Dataset version metadata
 ├── .env                      # Environment variables (MLflow, DagsHub, HF tokens, GROQ API)
 ├── .gitignore                # Git ignore patterns
 ├── requirements.txt          # Python dependencies
@@ -467,7 +487,9 @@ DAGSHUB_REPO_NAME=<repo_name>
 **Key Directories**:
 - **`configs/`**: All hyperparameters externalized for easy experimentation
 - **`src/`**: Modular source code with clear separation of concerns
+- **`src/analysis/`**: ✅ **NEW** - Dataset quality analysis and versioning
 - **`src/metrics/`**: Evaluation and monitoring infrastructure
+- **`health/`**: ✅ **NEW** - Standalone utilities for system health checks
 - **`scripts/`**: Operational utilities for system management
 - **`docs/`**: Comprehensive documentation for pipeline improvements
 - **`output/`**: Training artifacts (adapters, evaluation results)
@@ -844,10 +866,16 @@ Unsloth provides optimized CUDA kernels that:
 
 ```bash
 # Comprehensive dataset analysis
-python analyze_dataset.py
+python health/analyze_dataset.py
 
 # Detect duplicate samples
-python detect_duplicates.py
+python health/detect_duplicates.py
+
+# Test LLM-as-a-Judge evaluation
+python health/judge.py
+
+# Test pairwise model comparison
+python health/pairwise.py
 ```
 
 ### Cleanup
@@ -959,8 +987,9 @@ Comprehensive documentation for pipeline improvements is available in the `docs/
 Contributions are welcome! Areas for improvement:
 
 - **Evaluation**: ✅ LLM-as-a-Judge implemented! Pairwise comparison still available for implementation
-- **Data Quality**: Add duplicate detection and quality scoring
+- **Data Quality**: ✅ Duplicate detection and quality scoring implemented!
 - **Validation**: ✅ Implemented train/val/test splits
+- **Dataset Engineering**: ✅ Comprehensive analysis, versioning, and MLflow integration implemented!
 - **Monitoring**: Enhanced GPU profiling and token statistics
 - **Documentation**: Additional examples and tutorials
 
