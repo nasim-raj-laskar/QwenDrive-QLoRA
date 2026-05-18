@@ -965,20 +965,6 @@ training:
   save_strategy: "epoch"
   load_best_model_at_end: true
 ```
-
----
-
-## Documentation
-
-Comprehensive documentation for pipeline improvements is available in the `docs/` folder:
-
-- **[docs/README.md](docs/README.md)**: Documentation index and quick reference
-- **[docs/01_evaluation_improvements.md](docs/01_evaluation_improvements.md)**: Advanced evaluation methodologies
-- **[docs/02_validation_pipeline.md](docs/02_validation_pipeline.md)**: Overfitting detection and validation ✅ IMPLEMENTED
-- **[docs/03_dataset_engineering.md](docs/03_dataset_engineering.md)**: Data quality analysis and versioning
-- **[docs/04_experiment_tracking.md](docs/04_experiment_tracking.md)**: Full reproducibility and metadata tracking ✅ IMPLEMENTED
-- **[docs/05_implementation_roadmap.md](docs/05_implementation_roadmap.md)**: Phased implementation plan
-
 ---
 
 ## Contributing
