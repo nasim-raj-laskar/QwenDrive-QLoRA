@@ -15,7 +15,6 @@ from src.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 def main():
-    """Detect and report duplicates."""
     logger.info("Starting duplicate detection...")
     
     # Load configs
