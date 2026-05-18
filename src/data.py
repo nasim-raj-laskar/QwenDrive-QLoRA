@@ -44,7 +44,7 @@ def load_and_prepare(cfg, tokenizer, save_sample_path=None):
     quality_cfg = cfg.get("data_quality", {})
     if quality_cfg.get("enable_quality_filtering", False):
         logger.info("Quality filtering enabled - analyzing samples...")
-        from src.data_analysis import DatasetAnalyzer
+        from src.analysis import DatasetAnalyzer
         
         # Quick quality check
         temp_analyzer = DatasetAnalyzer(filtered_data, tokenizer)

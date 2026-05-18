@@ -7,7 +7,7 @@ import sys
 sys.path.append('.')
 
 import yaml
-from src.data_analysis import detect_exact_duplicates
+from src.analysis import detect_exact_duplicates
 from src.data import load_and_prepare
 from src.model import load_tokenizer
 from src.utils.logger import setup_logger

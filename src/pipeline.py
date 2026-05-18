@@ -8,7 +8,7 @@ from src.utils.logger import setup_logger
 from src.metrics.metrics import *
 from src.metrics.gpu_profiler import GPUProfiler
 from src.evaluation import run_evaluation
-from src.data_analysis import DatasetAnalyzer, DatasetVersioner
+from src.analysis import DatasetAnalyzer, DatasetVersioner
 
 logger = setup_logger(__name__)
 
