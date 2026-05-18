@@ -8,6 +8,7 @@ from src.utils.logger import setup_logger
 from src.metrics.metrics import *
 from src.metrics.gpu_profiler import GPUProfiler
 from src.evaluation import run_evaluation
+from src.data_analysis import DatasetAnalyzer, DatasetVersioner
 
 logger = setup_logger(__name__)
 
@@ -46,11 +47,45 @@ def run_training_pipeline(model_cfg, lora_cfg, train_cfg):
             model, tokenizer = load_model(model_cfg, lora_cfg)
             datasets = load_and_prepare(train_cfg["data"], tokenizer, save_sample_path="output/training_sample.jsonl")
             
+            # NEW: Analyze dataset before training
+            logger.info("Analyzing dataset quality and characteristics...")
+            analyzer = DatasetAnalyzer(
+                dataset=datasets["train"],
+                tokenizer=tokenizer,
+                output_dir="output/data_analysis"
+            )
+            
+            analysis_stats = analyzer.analyze_all()
+            
+            # Create dataset version
+            versioner = DatasetVersioner()
+            version_id, version_metadata = versioner.create_version(
+                dataset=datasets["train"],
+                config=train_cfg["data"],
+                preprocessing_steps=[
+                    "load_jsonl",
+                    f"shuffle_seed_{train_cfg['data']['shuffle_seed']}",
+                    f"sample_{train_cfg['data']['sample_size']}",
+                    "format_chat_template",
+                    f"filter_length_{train_cfg['data']['min_seq_length']}_{train_cfg['data']['max_seq_length']}",
+                    f"split_train_{train_cfg['data']['splits']['train']}_val_{train_cfg['data']['splits']['validation']}_test_{train_cfg['data']['splits']['test']}"
+                ]
+            )
+            
             # Log initial state
             logger.info("Logging initial state...")
             log_all_params(model_cfg, lora_cfg, train_cfg)
             log_model_summary(model, tokenizer)
             log_memory_usage()
+            
+            # Log dataset analysis results
+            logger.info("Logging dataset analysis results...")
+            log_dataset_analysis(analysis_stats)
+            log_dataset_version(version_metadata)
+            
+            # Log analysis artifacts
+            mlflow.log_artifacts("output/data_analysis")
+            mlflow.log_artifacts("data/versions")
             
             # Log git metadata and save config snapshot
             from src.metrics.metrics import log_git_metadata, save_config_snapshot, log_environment_info

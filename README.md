@@ -186,7 +186,18 @@ LoRA is injected into all seven projection layers across every transformer block
 4. **Format**: Apply ChatML template with system prompt injection
 5. **Tokenize**: Convert text to token IDs using Qwen tokenizer
 6. **Filter**: Remove sequences shorter than 10 or longer than 512 tokens
-7. **Validate**: Ensure all samples have proper conversation structure
+7. **Quality Analysis**: ✅ **NEW** - Comprehensive data quality assessment
+8. **Duplicate Detection**: ✅ **NEW** - Exact and near-duplicate identification
+9. **Version Tracking**: ✅ **NEW** - Dataset versioning and metadata
+10. **Validate**: Ensure all samples have proper conversation structure
+
+**Data Quality Features** ✅ **NEW**:
+- **Statistical Analysis**: Token distributions, length patterns, vocabulary analysis
+- **Quality Scoring**: Automated quality assessment (0-100 scale) for each sample
+- **Duplicate Detection**: Hash-based exact duplicates + fuzzy similarity matching
+- **Anomaly Detection**: Empty responses, malformed structure, repetitive content
+- **Version Control**: SHA-256 hashing and metadata tracking for reproducibility
+- **Quality Filtering**: Optional removal of low-quality samples (configurable)
 
 The system prompt (`You are an automotive expert assistant.`) is prepended to every conversation, establishing the model's role and domain expertise. This prompt engineering ensures consistent behavior across all fine-tuned responses.
 
@@ -827,6 +838,16 @@ Unsloth provides optimized CUDA kernels that:
 
 # Full project status
 ./scripts/status.sh
+```
+
+### Dataset Analysis
+
+```bash
+# Comprehensive dataset analysis
+python analyze_dataset.py
+
+# Detect duplicate samples
+python detect_duplicates.py
 ```
 
 ### Cleanup

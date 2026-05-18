@@ -60,3 +60,11 @@ training:
 # Evaluation settings
 eval_samples: 20  
 
+# Data quality thresholds
+data_quality:
+  min_quality_score: 70
+  max_duplicate_rate: 0.05  # 5%
+  max_empty_responses: 10
+  max_malformed_samples: 5
+  enable_quality_filtering: false  # Set to true to filter low-quality samples
+
