@@ -57,6 +57,52 @@ def log_dataset_params(dataset_info: Dict[str, Any]):
         "shuffle_seed": dataset_info.get("shuffle_seed")
     })
 
+def log_dataset_analysis(analysis_stats: Dict[str, Any]):
+    """Log dataset analysis results to MLflow."""
+    # Log basic statistics
+    mlflow.log_params({
+        "data_total_samples": analysis_stats["basic"]["total_samples"],
+        "data_unique_prompts": analysis_stats["basic"]["unique_prompts"],
+        "data_unique_responses": analysis_stats["basic"]["unique_responses"]
+    })
+    
+    # Log token distribution metrics
+    token_dist = analysis_stats["token_distribution"]
+    mlflow.log_metrics({
+        "data_avg_prompt_tokens": token_dist["prompt_tokens"]["mean"],
+        "data_avg_response_tokens": token_dist["response_tokens"]["mean"],
+        "data_avg_total_tokens": token_dist["total_tokens"]["mean"],
+        "data_p95_total_tokens": token_dist["total_tokens"]["p95"]
+    })
+    
+    # Log quality metrics
+    quality = analysis_stats["quality_scores"]
+    mlflow.log_metrics({
+        "data_mean_quality_score": quality["mean_score"],
+        "data_low_quality_count": quality["low_quality_count"]
+    })
+    
+    # Log duplicate detection
+    duplicates = analysis_stats["duplicates"]
+    mlflow.log_metrics({
+        "data_duplicate_rate": duplicates["duplicate_rate"],
+        "data_exact_prompt_duplicates": duplicates["exact_prompt_duplicates"]
+    })
+    
+    # Log quality flags as metrics
+    flags = analysis_stats["quality_flags"]
+    mlflow.log_metrics({
+        f"data_flag_{flag}": count for flag, count in flags.items()
+    })
+
+def log_dataset_version(version_metadata: Dict[str, Any]):
+    """Log dataset version metadata."""
+    mlflow.log_params({
+        "dataset_version": version_metadata["version_id"],
+        "dataset_hash": version_metadata["dataset_hash"],
+        "dataset_timestamp": version_metadata["timestamp"]
+    })
+
 def log_memory_usage():
     """Log GPU memory usage."""
     try:

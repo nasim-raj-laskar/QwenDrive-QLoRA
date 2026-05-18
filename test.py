@@ -2,7 +2,6 @@
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
-
 import yaml
 from transformers import TextStreamer
 from src.model import load_tokenizer, load_model

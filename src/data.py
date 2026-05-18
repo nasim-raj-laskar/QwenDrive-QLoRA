@@ -39,6 +39,27 @@ def load_and_prepare(cfg, tokenizer, save_sample_path=None):
     max_length = cfg.get("max_seq_length", 512)
     filtered_data = formatted_data.filter(lambda x: min_length <= len(x["input_ids"]) <= max_length)
     logger.info(f"Filtered dataset to {len(filtered_data)} samples with valid lengths")
+    
+    # Optional quality filtering
+    quality_cfg = cfg.get("data_quality", {})
+    if quality_cfg.get("enable_quality_filtering", False):
+        logger.info("Quality filtering enabled - analyzing samples...")
+        from src.analysis import DatasetAnalyzer
+        
+        # Quick quality check
+        temp_analyzer = DatasetAnalyzer(filtered_data, tokenizer)
+        min_score = quality_cfg.get("min_quality_score", 70)
+        
+        def quality_filter(example):
+            score_result = temp_analyzer._score_sample(example)
+            return score_result["score"] >= min_score
+        
+        pre_filter_count = len(filtered_data)
+        filtered_data = filtered_data.filter(quality_filter)
+        post_filter_count = len(filtered_data)
+        
+        logger.info(f"Quality filtering removed {pre_filter_count - post_filter_count} low-quality samples")
+        logger.info(f"Dataset after quality filtering: {post_filter_count} samples")
 
     # Split into train/val/test using config ratios
     val_test_ratio = cfg["splits"]["validation"] + cfg["splits"]["test"]
